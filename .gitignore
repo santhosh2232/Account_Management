@@ -1,0 +1,50 @@
+# === Angular (Frontend) ===
+/userInterface/dist
+/userInterface/tmp
+/userInterface/out-tsc
+/userInterface/bazel-out
+/userInterface/node_modules
+/userInterface/npm-debug.log
+/userInterface/yarn-error.log
+/userInterface/.angular/cache
+/userInterface/sass-cache/
+/userInterface/connect.lock
+/userInterface/coverage
+/userInterface/libpeerconnection.log
+/userInterface/testem.log
+/userInterface/typings
+/userInterface/.DS_Store
+/userInterface/Thumbs.db
+
+# === Node.js (Backend) ===
+/backend/node_modules
+/backend/.env
+/backend/npm-debug.log
+/backend/yarn-error.log
+/backend/.DS_Store
+/backend/Thumbs.db
+
+# === IDEs and editors ===
+.idea/
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.history/*
+
+# === System files ===
+.DS_Store
+Thumbs.db
+
+# === Logs ===
+*.log
+
+# === Miscellaneous ===
+/coverage
