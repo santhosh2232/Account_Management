@@ -1,0 +1,31 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="32" height="32" rx="6" fill="#1E40AF"/>
+  
+  <!-- Calculator/Financial Device -->
+  <rect x="6" y="8" width="20" height="16" rx="2" fill="white"/>
+  
+  <!-- Calculator Screen -->
+  <rect x="8" y="10" width="16" height="4" rx="1" fill="#E5E7EB"/>
+  <rect x="9" y="11" width="14" height="2" rx="0.5" fill="#374151"/>
+  
+  <!-- Calculator Buttons -->
+  <rect x="8" y="16" width="3" height="3" rx="0.5" fill="#3B82F6"/>
+  <rect x="12" y="16" width="3" height="3" rx="0.5" fill="#3B82F6"/>
+  <rect x="16" y="16" width="3" height="3" rx="0.5" fill="#10B981"/>
+  <rect x="20" y="16" width="3" height="3" rx="0.5" fill="#F59E0B"/>
+  
+  <rect x="8" y="20" width="3" height="3" rx="0.5" fill="#6B7280"/>
+  <rect x="12" y="20" width="3" height="3" rx="0.5" fill="#6B7280"/>
+  <rect x="16" y="20" width="3" height="3" rx="0.5" fill="#6B7280"/>
+  <rect x="20" y="20" width="3" height="3" rx="0.5" fill="#EF4444"/>
+  
+  <!-- Chart/Graph Lines -->
+  <path d="M4 26L8 24L12 25L16 22L20 23L24 20L28 21" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  
+  <!-- Dollar Sign -->
+  <path d="M26 6C26 5.44772 25.5523 5 25 5H23C22.4477 5 22 5.44772 22 6V8C22 8.55228 22.4477 9 23 9H25C25.5523 9 26 8.55228 26 8V6Z" fill="white"/>
+  <path d="M24 5V9" stroke="#1E40AF" stroke-width="1" stroke-linecap="round"/>
+  <path d="M23 6H25" stroke="#1E40AF" stroke-width="1" stroke-linecap="round"/>
+  <path d="M23 8H25" stroke="#1E40AF" stroke-width="1" stroke-linecap="round"/>
+</svg> 

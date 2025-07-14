@@ -1,0 +1,40 @@
+/* Component-specific styles for login form */
+.input-field {
+  @apply appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm;
+}
+
+.input-field:focus {
+  @apply ring-2 ring-primary-500 border-primary-500;
+}
+
+/* Error state styling - using regular CSS instead of @apply to avoid circular dependency */
+.input-field.border-red-500 {
+  border-color: #ef4444;
+}
+
+.input-field.border-red-500:focus {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+/* Form validation styles */
+.text-red-500 {
+  color: #ef4444;
+}
+
+/* Button hover effects */
+button:not(:disabled):hover {
+  transform: translateY(-1px);
+  transition: transform 0.15s ease-in-out;
+}
+
+/* Loading spinner animation */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+} 

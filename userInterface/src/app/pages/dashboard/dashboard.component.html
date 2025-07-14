@@ -1,0 +1,229 @@
+<div class="min-h-screen bg-gray-50">
+  <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+    <!-- Loading Spinner -->
+    <div *ngIf="loading" class="flex justify-center items-center h-64">
+      <div class="animate-spin rounded-full h-32 w-32 border-b-2 border-primary-600"></div>
+    </div>
+
+    <!-- Error Message -->
+    <div *ngIf="error && !loading" class="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative">
+      <div class="flex items-center justify-between">
+        <div>
+          <strong class="font-medium">Error:</strong>
+          <span class="ml-1">{{ error }}</span>
+        </div>
+        <button 
+          (click)="refreshData()" 
+          class="ml-4 bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm"
+        >
+          Retry
+        </button>
+      </div>
+    </div>
+
+    <!-- Welcome Message -->
+    <div *ngIf="!loading && !error" class="mb-6">
+      <h1 class="text-2xl font-bold text-gray-900">
+        Welcome back, {{ currentUser?.name || currentUser?.username || 'User' }}!
+      </h1>
+      <p class="text-gray-600">Here's your financial overview</p>
+    </div>
+
+    <!-- Stats Cards -->
+    <div *ngIf="!loading" class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+      <!-- Total Income -->
+      <div class="card">
+        <div class="flex items-center">
+          <div class="flex-shrink-0">
+            <div class="w-8 h-8 bg-green-100 rounded-md flex items-center justify-center">
+              <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+              </svg>
+            </div>
+          </div>
+          <div class="ml-5 w-0 flex-1">
+            <dl>
+              <dt class="text-sm font-medium text-gray-500 truncate">Total Income</dt>
+              <dd class="text-lg font-medium text-gray-900">₹{{ stats.totalIncome.toLocaleString() }}</dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+
+      <!-- Total Expenses -->
+      <div class="card">
+        <div class="flex items-center">
+          <div class="flex-shrink-0">
+            <div class="w-8 h-8 bg-red-100 rounded-md flex items-center justify-center">
+              <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
+              </svg>
+            </div>
+          </div>
+          <div class="ml-5 w-0 flex-1">
+            <dl>
+              <dt class="text-sm font-medium text-gray-500 truncate">Total Expenses</dt>
+              <dd class="text-lg font-medium text-gray-900">₹{{ stats.totalExpenses.toLocaleString() }}</dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+
+      <!-- Total Salary -->
+      <div class="card">
+        <div class="flex items-center">
+          <div class="flex-shrink-0">
+            <div class="w-8 h-8 bg-blue-100 rounded-md flex items-center justify-center">
+              <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+              </svg>
+            </div>
+          </div>
+          <div class="ml-5 w-0 flex-1">
+            <dl>
+              <dt class="text-sm font-medium text-gray-500 truncate">Total Salary</dt>
+              <dd class="text-lg font-medium text-gray-900">₹{{ stats.totalSalary.toLocaleString() }}</dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+
+      <!-- Net Balance -->
+      <div class="card">
+        <div class="flex items-center">
+          <div class="flex-shrink-0">
+            <div class="w-8 h-8 bg-purple-100 rounded-md flex items-center justify-center">
+              <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+              </svg>
+            </div>
+          </div>
+          <div class="ml-5 w-0 flex-1">
+            <dl>
+              <dt class="text-sm font-medium text-gray-500 truncate">Net Balance</dt>
+              <dd class="text-lg font-medium" [class.text-green-600]="stats.netBalance >= 0" [class.text-red-600]="stats.netBalance < 0">
+                ₹{{ stats.netBalance.toLocaleString() }}
+              </dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div *ngIf="!loading" class="space-y-8">
+      <!-- Bar Chart -->
+      <div class="card">
+        <h3 class="text-lg font-medium text-gray-900 mb-4">Income vs Expenses vs Salary Overview</h3>
+        <div class="h-80">
+          <canvas baseChart
+            [data]="barChartData"
+            [options]="barChartOptions"
+            [type]="barChartType">
+          </canvas>
+        </div>
+      </div>
+
+      <!-- Pie Charts Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Income Pie Chart -->
+        <div class="card">
+          <h3 class="text-lg font-medium text-gray-900 mb-4">Income by Category</h3>
+          <div class="h-64">
+            <canvas baseChart
+              [data]="incomePieChartData"
+              [options]="pieChartOptions"
+              [type]="pieChartType">
+            </canvas>
+          </div>
+        </div>
+
+        <!-- Expense Pie Chart -->
+        <div class="card">
+          <h3 class="text-lg font-medium text-gray-900 mb-4">Expenses by Category</h3>
+          <div class="h-64">
+            <canvas baseChart
+              [data]="expensePieChartData"
+              [options]="pieChartOptions"
+              [type]="pieChartType">
+            </canvas>
+          </div>
+        </div>
+
+        <!-- Salary Pie Chart -->
+        <div class="card">
+          <h3 class="text-lg font-medium text-gray-900 mb-4">Salary by Type</h3>
+          <div class="h-64">
+            <canvas baseChart
+              [data]="salaryPieChartData"
+              [options]="pieChartOptions"
+              [type]="pieChartType">
+            </canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Status Pie Charts Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Income Status Pie Chart -->
+        <div class="card">
+          <h3 class="text-lg font-medium text-gray-900 mb-4">Income by Payment Status</h3>
+          <div class="h-64">
+            <canvas baseChart
+              [data]="incomeStatusPieChartData"
+              [options]="pieChartOptions"
+              [type]="pieChartType">
+            </canvas>
+          </div>
+        </div>
+
+        <!-- Expense Status Pie Chart -->
+        <div class="card">
+          <h3 class="text-lg font-medium text-gray-900 mb-4">Expenses by Payment Status</h3>
+          <div class="h-64">
+            <canvas baseChart
+              [data]="expenseStatusPieChartData"
+              [options]="pieChartOptions"
+              [type]="pieChartType">
+            </canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div *ngIf="!loading" class="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-3">
+      <div class="card text-center">
+        <div class="text-2xl font-bold text-green-600">{{ stats.incomeCount }}</div>
+        <div class="text-sm text-gray-500">Income Records</div>
+      </div>
+      <div class="card text-center">
+        <div class="text-2xl font-bold text-red-600">{{ stats.expenseCount }}</div>
+        <div class="text-sm text-gray-500">Expense Records</div>
+      </div>
+      <div class="card text-center">
+        <div class="text-2xl font-bold text-blue-600">{{ stats.salaryCount }}</div>
+        <div class="text-sm text-gray-500">Salary Records</div>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div *ngIf="!loading && !error && stats.incomeCount === 0 && stats.expenseCount === 0 && stats.salaryCount === 0" class="text-center py-12">
+      <div class="max-w-md mx-auto">
+        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+        </svg>
+        <h3 class="mt-2 text-sm font-medium text-gray-900">No data available</h3>
+        <p class="mt-1 text-sm text-gray-500">Get started by adding your first income, expense, or salary record.</p>
+        <div class="mt-6">
+          <button 
+            (click)="refreshData()" 
+            class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
+          >
+            Refresh
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div> 
