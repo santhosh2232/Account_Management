@@ -1,6 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { SalaryService } from '../../services/salary.service';
+import * as XLSX from 'xlsx';
+import * as FileSaver from 'file-saver';
 
 @Component({
   selector: 'app-salary',
@@ -64,11 +66,12 @@ export class SalaryComponent implements OnInit {
   setDefaultDateRange(): void {
     const now = new Date();
     const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-    
+    firstDay.setHours(12, 0, 0, 0);
+    const today = new Date();
+    today.setHours(12, 0, 0, 0);
     this.filterForm.patchValue({
       startDate: firstDay.toISOString().split('T')[0],
-      endDate: lastDay.toISOString().split('T')[0]
+      endDate: today.toISOString().split('T')[0]
     });
   }
 
@@ -137,6 +140,23 @@ export class SalaryComponent implements OnInit {
   getPaymentTypeLabel(value: string): string {
     const paymentType = this.paymentTypes.find(type => type.value === value);
     return paymentType ? paymentType.label : value;
+  }
+
+  downloadExcel(): void {
+    // Prepare data for export (remove unwanted fields if necessary)
+    const exportData = this.salaries.map(salary => ({
+      'Payment Type': this.getPaymentTypeLabel(salary.payment_type) + (salary.payment_type_remarks ? ` (${salary.payment_type_remarks})` : ''),
+      'Amount': salary.amount,
+      'Payment To Whom': salary.payment_to_whom,
+      'Spent Date': salary.spent_date,
+      'Payment Through': salary.payment_through,
+      'Remarks': salary.remarks
+    }));
+    const worksheet: XLSX.WorkSheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook: XLSX.WorkBook = { Sheets: { 'Salaries': worksheet }, SheetNames: ['Salaries'] };
+    const excelBuffer: any = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const blob: Blob = new Blob([excelBuffer], { type: 'application/octet-stream' });
+    FileSaver.saveAs(blob, 'salary-records.xlsx');
   }
 
   get isOthersSelected(): boolean {

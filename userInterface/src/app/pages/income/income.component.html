@@ -1,4 +1,4 @@
-<div class="max-w-6xl mx-auto">
+<div class="mx-auto py-6 sm:px-6 lg:px-8">
   <div class="flex justify-between items-center mb-6">
     <h1 class="text-3xl font-bold text-gray-900">Income Management</h1>
     <button 
@@ -328,8 +328,11 @@
 
   <!-- Income List -->
   <div *ngIf="!loading" class="bg-white rounded-lg shadow-md overflow-hidden">
-    <div class="px-6 py-4 border-b border-gray-200">
+    <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
       <h2 class="text-xl font-semibold text-gray-900">Income Records</h2>
+      <button (click)="downloadExcel()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded shadow">
+        Download as Excel
+      </button>
     </div>
     <div class="overflow-x-auto">
       <table class="min-w-full divide-y divide-gray-200">

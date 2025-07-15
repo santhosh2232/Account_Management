@@ -2,6 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ExpenseService } from '../../services/expense.service';
 import { Expense } from '../../models/expense.model';
+import * as XLSX from 'xlsx';
+import * as FileSaver from 'file-saver';
 
 @Component({
   selector: 'app-expenses',
@@ -91,11 +93,12 @@ export class ExpensesComponent implements OnInit {
   setDefaultDateRange(): void {
     const now = new Date();
     const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-    
+    firstDay.setHours(12, 0, 0, 0);
+    const today = new Date();
+    today.setHours(12, 0, 0, 0);
     this.filterForm.patchValue({
       startDate: firstDay.toISOString().split('T')[0],
-      endDate: lastDay.toISOString().split('T')[0]
+      endDate: today.toISOString().split('T')[0]
     });
   }
 
@@ -231,6 +234,24 @@ export class ExpensesComponent implements OnInit {
   getStatusColor(value: string): string {
     const status = this.statusOptions.find(s => s.value === value);
     return status ? status.color : 'gray';
+  }
+
+  downloadExcel(): void {
+    // Prepare data for export (remove unwanted fields if necessary)
+    const exportData = this.expenses.map(expense => ({
+      'Category': this.getCategoryLabel(expense.expense_cat) + (expense.expense_cat_remarks ? ` (${expense.expense_cat_remarks})` : ''),
+      'Amount': expense.amount,
+      'Spent By': expense.spent_by,
+      'Spent On': expense.spent_on,
+      'Spent Through': expense.spent_through,
+      'Remarks': expense.remarks,
+      'Status': this.getStatusLabel(expense.status)
+    }));
+    const worksheet: XLSX.WorkSheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook: XLSX.WorkBook = { Sheets: { 'Expenses': worksheet }, SheetNames: ['Expenses'] };
+    const excelBuffer: any = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const blob: Blob = new Blob([excelBuffer], { type: 'application/octet-stream' });
+    FileSaver.saveAs(blob, 'expense-records.xlsx');
   }
 
   // Get filtered status options excluding current status

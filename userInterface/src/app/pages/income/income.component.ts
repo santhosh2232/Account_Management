@@ -2,6 +2,9 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { IncomeService } from '../../services/income.service';
 import { Income } from '../../models/income.model';
+import * as XLSX from 'xlsx';
+import * as FileSaver from 'file-saver';
+// Removed XLSX and FileSaver imports
 
 @Component({
   selector: 'app-income',
@@ -92,11 +95,12 @@ export class IncomeComponent implements OnInit {
   setDefaultDateRange(): void {
     const now = new Date();
     const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-    
+    firstDay.setHours(12, 0, 0, 0);
+    const today = new Date();
+    today.setHours(12, 0, 0, 0);
     this.filterForm.patchValue({
       startDate: firstDay.toISOString().split('T')[0],
-      endDate: lastDay.toISOString().split('T')[0]
+      endDate: today.toISOString().split('T')[0]
     });
   }
 
@@ -257,5 +261,24 @@ export class IncomeComponent implements OnInit {
 
   formatCurrency(amount: number): string {
     return `₹${amount.toLocaleString()}`;
+  }
+
+  downloadExcel(): void {
+    // Prepare data for export (remove unwanted fields if necessary)
+    const exportData = this.incomes.map(income => ({
+      'Category': this.getCategoryLabel(income.income_cat) + (income.income_cat_remarks ? ` (${income.income_cat_remarks})` : ''),
+      'Amount': income.amount,
+      'Received By': income.received_by,
+      'Received Date': income.received_on,
+      'Sender Name': income.sender_name,
+      'Sender Mobile': income.sender_mobile,
+      'Remarks': income.remarks,
+      'Status': this.getStatusLabel(income.status)
+    }));
+    const worksheet: XLSX.WorkSheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook: XLSX.WorkBook = { Sheets: { 'Income': worksheet }, SheetNames: ['Income'] };
+    const excelBuffer: any = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const blob: Blob = new Blob([excelBuffer], { type: 'application/octet-stream' });
+    FileSaver.saveAs(blob, 'income-records.xlsx');
   }
 } 

@@ -89,11 +89,12 @@ export class AccountsDetailsComponent implements OnInit, OnDestroy {
   setDefaultDateRange(): void {
     const now = new Date();
     const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-    
+    firstDay.setHours(12, 0, 0, 0);
+    const today = new Date();
+    today.setHours(12, 0, 0, 0);
     this.filterForm.patchValue({
       startDate: firstDay.toISOString().split('T')[0],
-      endDate: lastDay.toISOString().split('T')[0]
+      endDate: today.toISOString().split('T')[0]
     });
   }
 
