@@ -3,6 +3,7 @@ const { body, validationResult } = require('express-validator');
 const { Expense, AccountsDetails } = require('../models');
 const { auth, adminAuth } = require('../middleware/auth');
 const { Op } = require('sequelize');
+const expenseController = require('../controllers/expenseController');
 
 const router = express.Router();
 
@@ -36,107 +37,16 @@ const statusValidation = [
     .withMessage('Invalid status')
 ];
 
-// Get all expense records with filtering
-router.get('/', auth, async (req, res) => {
-  try {
-    const {
-      page = 1,
-      limit = 10,
-      category,
-      status,
-      startDate,
-      endDate,
-      search,
-      sortBy = 'created_at',
-      sortOrder = 'DESC'
-    } = req.query;
+// Apply auth middleware to all routes
+router.use(auth);
 
-    const offset = (page - 1) * limit;
-    const whereClause = {};
-
-    // Apply filters
-    if (category) {
-      whereClause.expense_cat = category;
-    }
-
-    if (status) {
-      whereClause.status = status;
-    }
-
-    if (startDate && endDate) {
-      whereClause.spent_on = {
-        [Op.between]: [startDate, endDate]
-      };
-    }
-
-    if (search) {
-      whereClause[Op.or] = [
-        { spent_by: { [Op.like]: `%${search}%` } },
-        { spent_through: { [Op.like]: `%${search}%` } },
-        { remarks: { [Op.like]: `%${search}%` } }
-      ];
-    }
-
-    const { count, rows } = await Expense.findAndCountAll({
-      where: whereClause,
-      order: [[sortBy, sortOrder]],
-      limit: parseInt(limit),
-      offset: parseInt(offset)
-    });
-
-    res.json({
-      data: rows,
-      pagination: {
-        currentPage: parseInt(page),
-        totalPages: Math.ceil(count / limit),
-        totalItems: count,
-        itemsPerPage: parseInt(limit)
-      }
-    });
-
-  } catch (error) {
-    console.error('Get expenses error:', error);
-    res.status(500).json({ 
-      message: 'Internal server error',
-      error: process.env.NODE_ENV === 'development' ? error.message : {}
-    });
-  }
-});
-
-// Get expense statistics
-router.get('/stats', auth, async (req, res) => {
-  try {
-    const stats = await Expense.findAll({
-      attributes: [
-        'expense_cat',
-        [require('sequelize').fn('SUM', require('sequelize').col('amount')), 'total'],
-        [require('sequelize').fn('COUNT', require('sequelize').col('sno')), 'count']
-      ],
-      group: ['expense_cat']
-    });
-
-    const totalExpenses = await Expense.sum('amount');
-    const totalCount = await Expense.count();
-
-    res.json({
-      totalExpenses: totalExpenses || 0,
-      totalCount,
-      byCategory: stats
-    });
-
-  } catch (error) {
-    console.error('Get expense stats error:', error);
-    res.status(500).json({ 
-      message: 'Internal server error',
-      error: process.env.NODE_ENV === 'development' ? error.message : {}
-    });
-  }
-});
-
-// Get expense statistics summary
+// Routes
+router.get('/', expenseController.getExpenses);
+router.get('/stats', expenseController.getExpenseStats);
 router.get('/stats/summary', auth, async (req, res) => {
   try {
     const stats = await Expense.findAll({
+      where: { user_id: req.user.id }, // Filter by authenticated user
       attributes: [
         'expense_cat',
         [require('sequelize').fn('SUM', require('sequelize').col('amount')), 'total'],
@@ -145,8 +55,8 @@ router.get('/stats/summary', auth, async (req, res) => {
       group: ['expense_cat']
     });
 
-    const totalExpenses = await Expense.sum('amount');
-    const totalCount = await Expense.count();
+    const totalExpenses = await Expense.sum('amount', { where: { user_id: req.user.id } });
+    const totalCount = await Expense.count({ where: { user_id: req.user.id } });
 
     res.json({
       totalExpenses,
@@ -163,105 +73,12 @@ router.get('/stats/summary', auth, async (req, res) => {
   }
 });
 
-// Create new expense record
-router.post('/', [auth, expenseValidation], async (req, res) => {
-  try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ 
-        message: 'Validation failed',
-        errors: errors.array() 
-      });
-    }
-
-    const expenseData = req.body;
-    const expense = await Expense.create(expenseData);
-
-    // Create accounts details record with better error handling
-    try {
-      await AccountsDetails.create({
-        entry_type: '2',
-        expenses_sno: expense.sno,
-        entry_by: req.user?.username || req.user?.name || 'Unknown',
-        ip_address: req.ip || 'Unknown',
-        browser_name: req.headers['user-agent'] ? req.headers['user-agent'].substring(0, 255) : 'Unknown',
-        browser_ver: '1.0',
-        operating_sys: 'Unknown'
-      });
-    } catch (accountsError) {
-      console.error('Error creating accounts details:', accountsError);
-      // Don't fail the entire request if accounts details creation fails
-      // The expense record is already created successfully
-    }
-
-    res.status(201).json({
-      message: 'Expense record created successfully',
-      data: expense
-    });
-
-  } catch (error) {
-    console.error('Create expense error:', error);
-    res.status(500).json({ 
-      message: 'Internal server error',
-      error: process.env.NODE_ENV === 'development' ? error.message : {}
-    });
-  }
-});
-
-// Get expense by ID
-router.get('/:id', auth, async (req, res) => {
-  try {
-    const expense = await Expense.findByPk(req.params.id);
-    
-    if (!expense) {
-      return res.status(404).json({ message: 'Expense record not found' });
-    }
-
-    res.json(expense);
-  } catch (error) {
-    console.error('Get expense by ID error:', error);
-    res.status(500).json({ 
-      message: 'Internal server error',
-      error: process.env.NODE_ENV === 'development' ? error.message : {}
-    });
-  }
-});
-
-// Update expense record
-router.put('/:id', [auth, expenseValidation], async (req, res) => {
-  try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ 
-        message: 'Validation failed',
-        errors: errors.array() 
-      });
-    }
-
-    const expense = await Expense.findByPk(req.params.id);
-    
-    if (!expense) {
-      return res.status(404).json({ message: 'Expense record not found' });
-    }
-
-    await expense.update(req.body);
-
-    res.json({
-      message: 'Expense record updated successfully',
-      data: expense
-    });
-
-  } catch (error) {
-    console.error('Update expense error:', error);
-    res.status(500).json({ 
-      message: 'Internal server error',
-      error: process.env.NODE_ENV === 'development' ? error.message : {}
-    });
-  }
-});
+router.post('/', expenseController.createExpense);
+router.get('/:id', expenseController.getExpense);
+router.put('/:id', expenseController.updateExpense);
 
 // Update expense status only
-router.patch('/:id/status', [auth, statusValidation], async (req, res) => {
+router.patch('/:id/status', [statusValidation], async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -271,7 +88,12 @@ router.patch('/:id/status', [auth, statusValidation], async (req, res) => {
       });
     }
 
-    const expense = await Expense.findByPk(req.params.id);
+    const expense = await Expense.findOne({
+      where: {
+        sno: req.params.id,
+        user_id: req.user.id // Filter by authenticated user
+      }
+    });
     
     if (!expense) {
       return res.status(404).json({ message: 'Expense record not found' });
@@ -293,26 +115,6 @@ router.patch('/:id/status', [auth, statusValidation], async (req, res) => {
   }
 });
 
-// Delete expense record
-router.delete('/:id', [auth], async (req, res) => {
-  try {
-    const expense = await Expense.findByPk(req.params.id);
-    
-    if (!expense) {
-      return res.status(404).json({ message: 'Expense record not found' });
-    }
-
-    await expense.destroy();
-
-    res.json({ message: 'Expense record deleted successfully' });
-
-  } catch (error) {
-    console.error('Delete expense error:', error);
-    res.status(500).json({ 
-      message: 'Internal server error',
-      error: process.env.NODE_ENV === 'development' ? error.message : {}
-    });
-  }
-});
+router.delete('/:id', expenseController.deleteExpense);
 
 module.exports = router; 

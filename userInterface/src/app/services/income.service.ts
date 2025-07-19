@@ -3,6 +3,17 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Income } from '../models/income.model';
 
+// Define the new API response structure
+interface IncomeResponse {
+  incomes: Income[];
+  pagination: {
+    currentPage: number;
+    totalPages: number;
+    totalItems: number;
+    itemsPerPage: number;
+  };
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -11,7 +22,7 @@ export class IncomeService {
 
   constructor(private http: HttpClient) { }
 
-  getIncomes(filters?: any): Observable<any> {
+  getIncomes(filters?: any): Observable<IncomeResponse> {
     let params = new HttpParams();
     if (filters) {
       Object.keys(filters).forEach(key => {
@@ -20,7 +31,7 @@ export class IncomeService {
         }
       });
     }
-    return this.http.get<any>(this.apiUrl, { params });
+    return this.http.get<IncomeResponse>(this.apiUrl, { params });
   }
 
   getIncomeById(id: number): Observable<Income> {

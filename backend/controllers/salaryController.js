@@ -8,35 +8,31 @@ const User = require('../models/User');
 // @access  Private
 const getSalaries = async (req, res) => {
   try {
-    const { page = 1, limit = 10, search, startDate, endDate, sortBy = 'paymentDate', sortOrder = 'DESC' } = req.query;
+    const { page = 1, limit = 10, search, startDate, endDate, sortBy = 'created_at', sortOrder = 'DESC' } = req.query;
     
     const offset = (page - 1) * limit;
-    const whereClause = { userId: req.user.userId };
+    const whereClause = {
+      user_id: req.user.id // Filter by authenticated user
+    };
 
     // Search functionality
     if (search) {
       whereClause[Op.or] = [
-        { description: { [Op.like]: `%${search}%` } },
-        { paymentMethod: { [Op.like]: `%${search}%` } }
+        { payment_type_remarks: { [Op.like]: `%${search}%` } },
+        { payment_to_whom: { [Op.like]: `%${search}%` } },
+        { remarks: { [Op.like]: `%${search}%` } }
       ];
     }
 
     // Date range filter
     if (startDate || endDate) {
-      whereClause.paymentDate = {};
-      if (startDate) whereClause.paymentDate[Op.gte] = new Date(startDate);
-      if (endDate) whereClause.paymentDate[Op.lte] = new Date(endDate);
+      whereClause.spent_date = {};
+      if (startDate) whereClause.spent_date[Op.gte] = new Date(startDate);
+      if (endDate) whereClause.spent_date[Op.lte] = new Date(endDate);
     }
 
     const salaries = await Salary.findAndCountAll({
       where: whereClause,
-      include: [
-        {
-          model: User,
-          as: 'user',
-          attributes: ['id', 'name', 'email']
-        }
-      ],
       order: [[sortBy, sortOrder]],
       limit: parseInt(limit),
       offset: parseInt(offset)
@@ -65,14 +61,10 @@ const getSalaries = async (req, res) => {
 const getSalary = async (req, res) => {
   try {
     const salary = await Salary.findOne({
-      where: { id: req.params.id, userId: req.user.userId },
-      include: [
-        {
-          model: User,
-          as: 'user',
-          attributes: ['id', 'name', 'email']
-        }
-      ]
+      where: {
+        sno: req.params.id,
+        user_id: req.user.id // Filter by authenticated user
+      }
     });
 
     if (!salary) {
@@ -97,43 +89,29 @@ const createSalary = async (req, res) => {
     }
 
     const { 
-      basicSalary, 
-      allowances, 
-      deductions, 
-      netSalary, 
-      paymentDate, 
-      paymentMethod, 
-      description,
-      month,
-      year
+      payment_type, 
+      payment_type_remarks, 
+      amount, 
+      payment_to_whom, 
+      spent_date, 
+      payment_through, 
+      remarks
     } = req.body;
 
     const salary = await Salary.create({
-      basicSalary,
-      allowances,
-      deductions,
-      netSalary,
-      paymentDate: paymentDate || new Date(),
-      paymentMethod,
-      description,
-      month,
-      year,
-      userId: req.user.userId
-    });
-
-    const createdSalary = await Salary.findByPk(salary.id, {
-      include: [
-        {
-          model: User,
-          as: 'user',
-          attributes: ['id', 'name', 'email']
-        }
-      ]
+      user_id: req.user.id, // Associate with authenticated user
+      payment_type,
+      payment_type_remarks,
+      amount,
+      payment_to_whom,
+      spent_date: spent_date || new Date(),
+      payment_through,
+      remarks
     });
 
     res.status(201).json({
       message: 'Salary created successfully',
-      salary: createdSalary
+      salary
     });
   } catch (error) {
     console.error('Create salary error:', error);
@@ -152,7 +130,10 @@ const updateSalary = async (req, res) => {
     }
 
     const salary = await Salary.findOne({
-      where: { id: req.params.id, userId: req.user.userId }
+      where: {
+        sno: req.params.id,
+        user_id: req.user.id // Filter by authenticated user
+      }
     });
 
     if (!salary) {
@@ -160,42 +141,28 @@ const updateSalary = async (req, res) => {
     }
 
     const { 
-      basicSalary, 
-      allowances, 
-      deductions, 
-      netSalary, 
-      paymentDate, 
-      paymentMethod, 
-      description,
-      month,
-      year
+      payment_type, 
+      payment_type_remarks, 
+      amount, 
+      payment_to_whom, 
+      spent_date, 
+      payment_through, 
+      remarks
     } = req.body;
 
     await salary.update({
-      basicSalary: basicSalary || salary.basicSalary,
-      allowances: allowances || salary.allowances,
-      deductions: deductions || salary.deductions,
-      netSalary: netSalary || salary.netSalary,
-      paymentDate: paymentDate || salary.paymentDate,
-      paymentMethod: paymentMethod || salary.paymentMethod,
-      description: description || salary.description,
-      month: month || salary.month,
-      year: year || salary.year
-    });
-
-    const updatedSalary = await Salary.findByPk(salary.id, {
-      include: [
-        {
-          model: User,
-          as: 'user',
-          attributes: ['id', 'name', 'email']
-        }
-      ]
+      payment_type: payment_type || salary.payment_type,
+      payment_type_remarks: payment_type_remarks || salary.payment_type_remarks,
+      amount: amount || salary.amount,
+      payment_to_whom: payment_to_whom || salary.payment_to_whom,
+      spent_date: spent_date || salary.spent_date,
+      payment_through: payment_through || salary.payment_through,
+      remarks: remarks || salary.remarks
     });
 
     res.json({
       message: 'Salary updated successfully',
-      salary: updatedSalary
+      salary
     });
   } catch (error) {
     console.error('Update salary error:', error);
@@ -209,7 +176,10 @@ const updateSalary = async (req, res) => {
 const deleteSalary = async (req, res) => {
   try {
     const salary = await Salary.findOne({
-      where: { id: req.params.id, userId: req.user.userId }
+      where: {
+        sno: req.params.id,
+        user_id: req.user.id // Filter by authenticated user
+      }
     });
 
     if (!salary) {
@@ -230,71 +200,47 @@ const deleteSalary = async (req, res) => {
 // @access  Private
 const getSalaryStats = async (req, res) => {
   try {
-    const { startDate, endDate, year } = req.query;
-    const whereClause = { userId: req.user.userId };
+    const { startDate, endDate } = req.query;
+    const whereClause = {
+      user_id: req.user.id // Filter by authenticated user
+    };
 
     if (startDate || endDate) {
-      whereClause.paymentDate = {};
-      if (startDate) whereClause.paymentDate[Op.gte] = new Date(startDate);
-      if (endDate) whereClause.paymentDate[Op.lte] = new Date(endDate);
+      whereClause.spent_date = {};
+      if (startDate) whereClause.spent_date[Op.gte] = new Date(startDate);
+      if (endDate) whereClause.spent_date[Op.lte] = new Date(endDate);
     }
 
-    if (year) {
-      whereClause.year = year;
-    }
-
-    const totalNetSalary = await Salary.sum('netSalary', { where: whereClause });
-    const totalBasicSalary = await Salary.sum('basicSalary', { where: whereClause });
-    const totalAllowances = await Salary.sum('allowances', { where: whereClause });
-    const totalDeductions = await Salary.sum('deductions', { where: whereClause });
+    const totalSalary = await Salary.sum('amount', { where: whereClause });
     const salaryCount = await Salary.count({ where: whereClause });
+
+    // Get salary by payment type
+    const salaryByPaymentType = await Salary.findAll({
+      where: whereClause,
+      attributes: [
+        'payment_type',
+        [Salary.sequelize.fn('SUM', Salary.sequelize.col('amount')), 'total']
+      ],
+      group: ['payment_type']
+    });
 
     // Get monthly salary for the last 12 months
     const monthlySalary = await Salary.findAll({
       where: whereClause,
       attributes: [
-        [Salary.sequelize.fn('DATE_FORMAT', Salary.sequelize.col('paymentDate'), '%Y-%m'), 'month'],
-        [Salary.sequelize.fn('SUM', Salary.sequelize.col('netSalary')), 'totalNetSalary'],
-        [Salary.sequelize.fn('SUM', Salary.sequelize.col('basicSalary')), 'totalBasicSalary']
+        [Salary.sequelize.fn('TO_CHAR', Salary.sequelize.col('spent_date'), 'YYYY-MM'), 'month'],
+        [Salary.sequelize.fn('SUM', Salary.sequelize.col('amount')), 'total']
       ],
-      group: [Salary.sequelize.fn('DATE_FORMAT', Salary.sequelize.col('paymentDate'), '%Y-%m')],
-      order: [[Salary.sequelize.fn('DATE_FORMAT', Salary.sequelize.col('paymentDate'), '%Y-%m'), 'DESC']],
+      group: [Salary.sequelize.fn('TO_CHAR', Salary.sequelize.col('spent_date'), 'YYYY-MM')],
+      order: [[Salary.sequelize.fn('TO_CHAR', Salary.sequelize.col('spent_date'), 'YYYY-MM'), 'DESC']],
       limit: 12
     });
 
-    // Get salary by payment method
-    const salaryByPaymentMethod = await Salary.findAll({
-      where: whereClause,
-      attributes: [
-        'paymentMethod',
-        [Salary.sequelize.fn('SUM', Salary.sequelize.col('netSalary')), 'total']
-      ],
-      group: ['paymentMethod']
-    });
-
-    // Get yearly salary summary
-    const yearlySalary = await Salary.findAll({
-      where: whereClause,
-      attributes: [
-        'year',
-        [Salary.sequelize.fn('SUM', Salary.sequelize.col('netSalary')), 'totalNetSalary'],
-        [Salary.sequelize.fn('SUM', Salary.sequelize.col('basicSalary')), 'totalBasicSalary'],
-        [Salary.sequelize.fn('SUM', Salary.sequelize.col('allowances')), 'totalAllowances'],
-        [Salary.sequelize.fn('SUM', Salary.sequelize.col('deductions')), 'totalDeductions']
-      ],
-      group: ['year'],
-      order: [['year', 'DESC']]
-    });
-
     res.json({
-      totalNetSalary: totalNetSalary || 0,
-      totalBasicSalary: totalBasicSalary || 0,
-      totalAllowances: totalAllowances || 0,
-      totalDeductions: totalDeductions || 0,
+      totalSalary: totalSalary || 0,
       salaryCount,
-      monthlySalary,
-      salaryByPaymentMethod,
-      yearlySalary
+      salaryByPaymentType,
+      monthlySalary
     });
   } catch (error) {
     console.error('Get salary stats error:', error);

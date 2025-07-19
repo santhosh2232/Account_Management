@@ -39,7 +39,12 @@
           <div class="ml-4 flex items-center md:ml-6">
             <div class="relative">
               <div class="flex items-center space-x-4">
-                <span class="text-sm text-gray-500">Welcome, {{ currentUser?.username }}</span>
+                <span class="text-sm text-gray-500">
+                  Welcome
+                  <ng-container *ngIf="currentUser">
+                    , {{ currentUser.name || currentUser.username || currentUser.email }}
+                  </ng-container>
+                </span>
                 <button 
                   (click)="logout()" 
                   class="btn-secondary"
@@ -98,7 +103,9 @@
           </div>
         </div>
         <div class="ml-3">
-          <div class="text-base font-medium text-gray-800">{{ currentUser?.username }}</div>
+          <div class="text-base font-medium text-gray-800">
+            {{ currentUser?.name || currentUser?.username || currentUser?.email }}
+          </div>
           <div class="text-sm font-medium text-gray-500">{{ currentUser?.email }}</div>
         </div>
       </div>

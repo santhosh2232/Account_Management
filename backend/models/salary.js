@@ -8,6 +8,11 @@ const Salary = sequelize.define('Salary', {
     autoIncrement: true,
     comment: 'Auto-increment primary key'
   },
+  user_id: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    comment: 'Foreign key to users table'
+  },
   payment_type: {
     type: DataTypes.ENUM('1', '2', '3'),
     allowNull: false,

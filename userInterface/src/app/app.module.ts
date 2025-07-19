@@ -16,12 +16,15 @@ import { SalaryComponent } from './pages/salary/salary.component';
 import { AccountsDetailsComponent } from './pages/accounts-details/accounts-details.component';
 import { NavbarComponent } from './components/navbar/navbar.component';
 import { LayoutComponent } from './components/layout/layout.component';
+import { RegisterComponent } from './pages/register/register.component';
+import { ForgotPasswordComponent } from './pages/forgot-password/forgot-password.component';
 
 // Services
 import { AuthService } from './services/auth.service';
 import { IncomeService } from './services/income.service';
 import { ExpenseService } from './services/expense.service';
 import { SalaryService } from './services/salary.service';
+import { AccountsDetailsService } from './services/accounts-details.service';
 
 // Guards
 import { AuthGuard } from './guards/auth.guard';
@@ -40,7 +43,9 @@ import { AuthInterceptor } from './interceptors/auth.interceptor';
     SalaryComponent,
     AccountsDetailsComponent,
     NavbarComponent,
-    LayoutComponent
+    LayoutComponent,
+    RegisterComponent,
+    ForgotPasswordComponent
   ],
   imports: [
     BrowserModule,
@@ -54,6 +59,7 @@ import { AuthInterceptor } from './interceptors/auth.interceptor';
     IncomeService,
     ExpenseService,
     SalaryService,
+    AccountsDetailsService,
     AuthGuard,
     AdminGuard,
     {

@@ -8,40 +8,36 @@ const User = require('../models/User');
 // @access  Private
 const getExpenses = async (req, res) => {
   try {
-    const { page = 1, limit = 10, search, category, startDate, endDate, sortBy = 'date', sortOrder = 'DESC' } = req.query;
+    const { page = 1, limit = 10, search, expense_cat, startDate, endDate, sortBy = 'created_at', sortOrder = 'DESC' } = req.query;
     
     const offset = (page - 1) * limit;
-    const whereClause = { userId: req.user.userId };
+    const whereClause = {
+      user_id: req.user.id // Filter by authenticated user
+    };
 
     // Search functionality
     if (search) {
       whereClause[Op.or] = [
-        { description: { [Op.like]: `%${search}%` } },
-        { category: { [Op.like]: `%${search}%` } }
+        { expense_cat_remarks: { [Op.like]: `%${search}%` } },
+        { spent_by: { [Op.like]: `%${search}%` } },
+        { remarks: { [Op.like]: `%${search}%` } }
       ];
     }
 
     // Category filter
-    if (category) {
-      whereClause.category = category;
+    if (expense_cat) {
+      whereClause.expense_cat = expense_cat;
     }
 
     // Date range filter
     if (startDate || endDate) {
-      whereClause.date = {};
-      if (startDate) whereClause.date[Op.gte] = new Date(startDate);
-      if (endDate) whereClause.date[Op.lte] = new Date(endDate);
+      whereClause.spent_on = {};
+      if (startDate) whereClause.spent_on[Op.gte] = new Date(startDate);
+      if (endDate) whereClause.spent_on[Op.lte] = new Date(endDate);
     }
 
     const expenses = await Expense.findAndCountAll({
       where: whereClause,
-      include: [
-        {
-          model: User,
-          as: 'user',
-          attributes: ['id', 'name', 'email']
-        }
-      ],
       order: [[sortBy, sortOrder]],
       limit: parseInt(limit),
       offset: parseInt(offset)
@@ -70,14 +66,10 @@ const getExpenses = async (req, res) => {
 const getExpense = async (req, res) => {
   try {
     const expense = await Expense.findOne({
-      where: { id: req.params.id, userId: req.user.userId },
-      include: [
-        {
-          model: User,
-          as: 'user',
-          attributes: ['id', 'name', 'email']
-        }
-      ]
+      where: {
+        sno: req.params.id,
+        user_id: req.user.id // Filter by authenticated user
+      }
     });
 
     if (!expense) {
@@ -101,30 +93,32 @@ const createExpense = async (req, res) => {
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { amount, description, category, date, paymentMethod } = req.body;
+    const { 
+      expense_cat, 
+      expense_cat_remarks, 
+      amount, 
+      spent_by, 
+      spent_on, 
+      spent_through, 
+      remarks,
+      status = '1'
+    } = req.body;
 
     const expense = await Expense.create({
+      user_id: req.user.id, // Associate with authenticated user
+      expense_cat,
+      expense_cat_remarks,
       amount,
-      description,
-      category,
-      date: date || new Date(),
-      paymentMethod,
-      userId: req.user.userId
-    });
-
-    const createdExpense = await Expense.findByPk(expense.id, {
-      include: [
-        {
-          model: User,
-          as: 'user',
-          attributes: ['id', 'name', 'email']
-        }
-      ]
+      spent_by,
+      spent_on: spent_on || new Date(),
+      spent_through,
+      remarks,
+      status
     });
 
     res.status(201).json({
       message: 'Expense created successfully',
-      expense: createdExpense
+      expense
     });
   } catch (error) {
     console.error('Create expense error:', error);
@@ -143,36 +137,41 @@ const updateExpense = async (req, res) => {
     }
 
     const expense = await Expense.findOne({
-      where: { id: req.params.id, userId: req.user.userId }
+      where: {
+        sno: req.params.id,
+        user_id: req.user.id // Filter by authenticated user
+      }
     });
 
     if (!expense) {
       return res.status(404).json({ message: 'Expense not found' });
     }
 
-    const { amount, description, category, date, paymentMethod } = req.body;
+    const { 
+      expense_cat, 
+      expense_cat_remarks, 
+      amount, 
+      spent_by, 
+      spent_on, 
+      spent_through, 
+      remarks,
+      status
+    } = req.body;
 
     await expense.update({
+      expense_cat: expense_cat || expense.expense_cat,
+      expense_cat_remarks: expense_cat_remarks || expense.expense_cat_remarks,
       amount: amount || expense.amount,
-      description: description || expense.description,
-      category: category || expense.category,
-      date: date || expense.date,
-      paymentMethod: paymentMethod || expense.paymentMethod
-    });
-
-    const updatedExpense = await Expense.findByPk(expense.id, {
-      include: [
-        {
-          model: User,
-          as: 'user',
-          attributes: ['id', 'name', 'email']
-        }
-      ]
+      spent_by: spent_by || expense.spent_by,
+      spent_on: spent_on || expense.spent_on,
+      spent_through: spent_through || expense.spent_through,
+      remarks: remarks || expense.remarks,
+      status: status || expense.status
     });
 
     res.json({
       message: 'Expense updated successfully',
-      expense: updatedExpense
+      expense
     });
   } catch (error) {
     console.error('Update expense error:', error);
@@ -186,7 +185,10 @@ const updateExpense = async (req, res) => {
 const deleteExpense = async (req, res) => {
   try {
     const expense = await Expense.findOne({
-      where: { id: req.params.id, userId: req.user.userId }
+      where: {
+        sno: req.params.id,
+        user_id: req.user.id // Filter by authenticated user
+      }
     });
 
     if (!expense) {
@@ -208,12 +210,14 @@ const deleteExpense = async (req, res) => {
 const getExpenseStats = async (req, res) => {
   try {
     const { startDate, endDate } = req.query;
-    const whereClause = { userId: req.user.userId };
+    const whereClause = {
+      user_id: req.user.id // Filter by authenticated user
+    };
 
     if (startDate || endDate) {
-      whereClause.date = {};
-      if (startDate) whereClause.date[Op.gte] = new Date(startDate);
-      if (endDate) whereClause.date[Op.lte] = new Date(endDate);
+      whereClause.spent_on = {};
+      if (startDate) whereClause.spent_on[Op.gte] = new Date(startDate);
+      if (endDate) whereClause.spent_on[Op.lte] = new Date(endDate);
     }
 
     const totalExpense = await Expense.sum('amount', { where: whereClause });
@@ -223,40 +227,29 @@ const getExpenseStats = async (req, res) => {
     const expenseByCategory = await Expense.findAll({
       where: whereClause,
       attributes: [
-        'category',
+        'expense_cat',
         [Expense.sequelize.fn('SUM', Expense.sequelize.col('amount')), 'total']
       ],
-      group: ['category']
+      group: ['expense_cat']
     });
 
     // Get monthly expense for the last 12 months
     const monthlyExpense = await Expense.findAll({
       where: whereClause,
       attributes: [
-        [Expense.sequelize.fn('DATE_FORMAT', Expense.sequelize.col('date'), '%Y-%m'), 'month'],
+        [Expense.sequelize.fn('TO_CHAR', Expense.sequelize.col('spent_on'), 'YYYY-MM'), 'month'],
         [Expense.sequelize.fn('SUM', Expense.sequelize.col('amount')), 'total']
       ],
-      group: [Expense.sequelize.fn('DATE_FORMAT', Expense.sequelize.col('date'), '%Y-%m')],
-      order: [[Expense.sequelize.fn('DATE_FORMAT', Expense.sequelize.col('date'), '%Y-%m'), 'DESC']],
+      group: [Expense.sequelize.fn('TO_CHAR', Expense.sequelize.col('spent_on'), 'YYYY-MM')],
+      order: [[Expense.sequelize.fn('TO_CHAR', Expense.sequelize.col('spent_on'), 'YYYY-MM'), 'DESC']],
       limit: 12
-    });
-
-    // Get expense by payment method
-    const expenseByPaymentMethod = await Expense.findAll({
-      where: whereClause,
-      attributes: [
-        'paymentMethod',
-        [Expense.sequelize.fn('SUM', Expense.sequelize.col('amount')), 'total']
-      ],
-      group: ['paymentMethod']
     });
 
     res.json({
       totalExpense: totalExpense || 0,
       expenseCount,
       expenseByCategory,
-      monthlyExpense,
-      expenseByPaymentMethod
+      monthlyExpense
     });
   } catch (error) {
     console.error('Get expense stats error:', error);

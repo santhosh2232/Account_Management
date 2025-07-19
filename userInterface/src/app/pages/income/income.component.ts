@@ -117,9 +117,11 @@ export class IncomeComponent implements OnInit {
     if (filters.search) queryParams.search = filters.search;
 
     this.incomeService.getIncomes(queryParams).subscribe({
-      next: (response) => {
-        // Extract data array from response
-        if (response && response.data && Array.isArray(response.data)) {
+      next: (response: any) => {
+        // Extract data array from response - handle both new and old structure
+        if (response && response.incomes && Array.isArray(response.incomes)) {
+          this.incomes = response.incomes;
+        } else if (response && response.data && Array.isArray(response.data)) {
           this.incomes = response.data;
         } else {
           this.incomes = [];

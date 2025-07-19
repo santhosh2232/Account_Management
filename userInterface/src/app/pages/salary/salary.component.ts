@@ -24,6 +24,15 @@ export class SalaryComponent implements OnInit {
     { value: '3', label: 'Others' }
   ];
 
+  // Summary statistics
+  summary = {
+    totalSalary: 0,
+    totalCount: 0,
+    sharesCount: 0,
+    salaryCount: 0,
+    othersCount: 0
+  };
+
   constructor(
     private fb: FormBuilder,
     private salaryService: SalaryService
@@ -87,13 +96,16 @@ export class SalaryComponent implements OnInit {
     if (filters.search) queryParams.search = filters.search;
 
     this.salaryService.getSalaries(queryParams).subscribe({
-      next: (response) => {
-        // Extract data array from response
-        if (response && response.data && Array.isArray(response.data)) {
+      next: (response: any) => {
+        // Extract data array from response - handle both new and old structure
+        if (response && response.salaries && Array.isArray(response.salaries)) {
+          this.salaries = response.salaries;
+        } else if (response && response.data && Array.isArray(response.data)) {
           this.salaries = response.data;
         } else {
           this.salaries = [];
         }
+        this.calculateSummary();
         this.loading = false;
       },
       error: (error) => {
@@ -142,6 +154,17 @@ export class SalaryComponent implements OnInit {
     return paymentType ? paymentType.label : value;
   }
 
+  calculateSummary(): void {
+    this.summary.totalCount = this.salaries.length;
+    this.summary.sharesCount = this.salaries.filter(salary => salary.payment_type === '1').length;
+    this.summary.salaryCount = this.salaries.filter(salary => salary.payment_type === '2').length;
+    this.summary.othersCount = this.salaries.filter(salary => salary.payment_type === '3').length;
+    
+    // Calculate total salary amount
+    this.summary.totalSalary = this.salaries
+      .reduce((sum, salary) => sum + (parseFloat(salary.amount) || 0), 0);
+  }
+
   downloadExcel(): void {
     // Prepare data for export (remove unwanted fields if necessary)
     const exportData = this.salaries.map(salary => ({
@@ -161,5 +184,9 @@ export class SalaryComponent implements OnInit {
 
   get isOthersSelected(): boolean {
     return this.salaryForm.get('payment_type')?.value === '3';
+  }
+
+  formatCurrency(amount: number): string {
+    return `₹${amount.toLocaleString()}`;
   }
 } 

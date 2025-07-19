@@ -8,6 +8,11 @@ const AccountsDetails = sequelize.define('AccountsDetails', {
     autoIncrement: true,
     comment: 'Auto-increment primary key'
   },
+  user_id: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    comment: 'Foreign key to users table'
+  },
   entry_type: {
     type: DataTypes.ENUM('1', '2', '3'),
     allowNull: false,

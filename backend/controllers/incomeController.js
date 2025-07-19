@@ -1,6 +1,7 @@
 const { validationResult } = require('express-validator');
 const { Op } = require('sequelize');
 const Income = require('../models/Income');
+const { User, AccountsDetails } = require('../models');
 
 // @desc    Get all incomes with filtering and pagination
 // @route   GET /api/income
@@ -10,7 +11,9 @@ const getIncomes = async (req, res) => {
     const { page = 1, limit = 10, search, income_cat, startDate, endDate, sortBy = 'created_at', sortOrder = 'DESC' } = req.query;
     
     const offset = (page - 1) * limit;
-    const whereClause = {};
+    const whereClause = {
+      user_id: req.user.id // Filter by authenticated user
+    };
 
     // Search functionality
     if (search) {
@@ -62,7 +65,12 @@ const getIncomes = async (req, res) => {
 // @access  Private
 const getIncome = async (req, res) => {
   try {
-    const income = await Income.findByPk(req.params.id);
+    const income = await Income.findOne({
+      where: {
+        sno: req.params.id,
+        user_id: req.user.id // Filter by authenticated user
+      }
+    });
 
     if (!income) {
       return res.status(404).json({ message: 'Income not found' });
@@ -98,6 +106,7 @@ const createIncome = async (req, res) => {
     } = req.body;
 
     const income = await Income.create({
+      user_id: req.user.id, // Associate with authenticated user
       income_cat,
       income_cat_remarks,
       amount,
@@ -129,7 +138,12 @@ const updateIncome = async (req, res) => {
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const income = await Income.findByPk(req.params.id);
+    const income = await Income.findOne({
+      where: {
+        sno: req.params.id,
+        user_id: req.user.id // Filter by authenticated user
+      }
+    });
 
     if (!income) {
       return res.status(404).json({ message: 'Income not found' });
@@ -174,7 +188,12 @@ const updateIncome = async (req, res) => {
 // @access  Private
 const deleteIncome = async (req, res) => {
   try {
-    const income = await Income.findByPk(req.params.id);
+    const income = await Income.findOne({
+      where: {
+        sno: req.params.id,
+        user_id: req.user.id // Filter by authenticated user
+      }
+    });
 
     if (!income) {
       return res.status(404).json({ message: 'Income not found' });
@@ -195,7 +214,9 @@ const deleteIncome = async (req, res) => {
 const getIncomeStats = async (req, res) => {
   try {
     const { startDate, endDate } = req.query;
-    const whereClause = {};
+    const whereClause = {
+      user_id: req.user.id // Filter by authenticated user
+    };
 
     if (startDate || endDate) {
       whereClause.received_on = {};
@@ -220,11 +241,11 @@ const getIncomeStats = async (req, res) => {
     const monthlyIncome = await Income.findAll({
       where: whereClause,
       attributes: [
-        [Income.sequelize.fn('DATE_FORMAT', Income.sequelize.col('received_on'), '%Y-%m'), 'month'],
+        [Income.sequelize.fn('TO_CHAR', Income.sequelize.col('received_on'), 'YYYY-MM'), 'month'],
         [Income.sequelize.fn('SUM', Income.sequelize.col('amount')), 'total']
       ],
-      group: [Income.sequelize.fn('DATE_FORMAT', Income.sequelize.col('received_on'), '%Y-%m')],
-      order: [[Income.sequelize.fn('DATE_FORMAT', Income.sequelize.col('received_on'), '%Y-%m'), 'DESC']],
+      group: [Income.sequelize.fn('TO_CHAR', Income.sequelize.col('received_on'), 'YYYY-MM')],
+      order: [[Income.sequelize.fn('TO_CHAR', Income.sequelize.col('received_on'), 'YYYY-MM'), 'DESC']],
       limit: 12
     });
 

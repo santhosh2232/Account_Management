@@ -8,42 +8,36 @@ const User = require('../models/User');
 // @access  Private
 const getAccountsDetails = async (req, res) => {
   try {
-    const { page = 1, limit = 10, search, accountType, startDate, endDate, sortBy = 'createdAt', sortOrder = 'DESC' } = req.query;
+    const { page = 1, limit = 10, search, entry_type, startDate, endDate, sortBy = 'created_at', sortOrder = 'DESC' } = req.query;
     
     const offset = (page - 1) * limit;
-    const whereClause = { userId: req.user.userId };
+    const whereClause = {
+      user_id: req.user.id // Filter by authenticated user
+    };
 
     // Search functionality
     if (search) {
       whereClause[Op.or] = [
-        { accountName: { [Op.like]: `%${search}%` } },
-        { accountNumber: { [Op.like]: `%${search}%` } },
-        { bankName: { [Op.like]: `%${search}%` } },
-        { description: { [Op.like]: `%${search}%` } }
+        { entry_by: { [Op.like]: `%${search}%` } },
+        { ip_address: { [Op.like]: `%${search}%` } },
+        { browser_name: { [Op.like]: `%${search}%` } }
       ];
     }
 
-    // Account type filter
-    if (accountType) {
-      whereClause.accountType = accountType;
+    // Entry type filter
+    if (entry_type) {
+      whereClause.entry_type = entry_type;
     }
 
     // Date range filter
     if (startDate || endDate) {
-      whereClause.createdAt = {};
-      if (startDate) whereClause.createdAt[Op.gte] = new Date(startDate);
-      if (endDate) whereClause.createdAt[Op.lte] = new Date(endDate);
+      whereClause.created_at = {};
+      if (startDate) whereClause.created_at[Op.gte] = new Date(startDate);
+      if (endDate) whereClause.created_at[Op.lte] = new Date(endDate);
     }
 
     const accountsDetails = await AccountsDetails.findAndCountAll({
       where: whereClause,
-      include: [
-        {
-          model: User,
-          as: 'user',
-          attributes: ['id', 'name', 'email']
-        }
-      ],
       order: [[sortBy, sortOrder]],
       limit: parseInt(limit),
       offset: parseInt(offset)
@@ -72,14 +66,10 @@ const getAccountsDetails = async (req, res) => {
 const getAccountDetail = async (req, res) => {
   try {
     const accountDetail = await AccountsDetails.findOne({
-      where: { id: req.params.id, userId: req.user.userId },
-      include: [
-        {
-          model: User,
-          as: 'user',
-          attributes: ['id', 'name', 'email']
-        }
-      ]
+      where: {
+        sno: req.params.id,
+        user_id: req.user.id // Filter by authenticated user
+      }
     });
 
     if (!accountDetail) {
@@ -104,41 +94,33 @@ const createAccountDetail = async (req, res) => {
     }
 
     const { 
-      accountName, 
-      accountNumber, 
-      bankName, 
-      accountType, 
-      balance, 
-      currency, 
-      description,
-      isActive = true
+      entry_type, 
+      income_sno, 
+      expenses_sno, 
+      salary_sno, 
+      entry_by, 
+      ip_address, 
+      browser_name,
+      browser_ver,
+      operating_sys
     } = req.body;
 
     const accountDetail = await AccountsDetails.create({
-      accountName,
-      accountNumber,
-      bankName,
-      accountType,
-      balance: balance || 0,
-      currency: currency || 'USD',
-      description,
-      isActive,
-      userId: req.user.userId
-    });
-
-    const createdAccountDetail = await AccountsDetails.findByPk(accountDetail.id, {
-      include: [
-        {
-          model: User,
-          as: 'user',
-          attributes: ['id', 'name', 'email']
-        }
-      ]
+      user_id: req.user.id, // Associate with authenticated user
+      entry_type,
+      income_sno,
+      expenses_sno,
+      salary_sno,
+      entry_by: entry_by || req.user.name,
+      ip_address: ip_address || req.ip,
+      browser_name: browser_name || req.headers['user-agent'],
+      browser_ver: browser_ver,
+      operating_sys: operating_sys
     });
 
     res.status(201).json({
       message: 'Account detail created successfully',
-      accountDetail: createdAccountDetail
+      accountDetail
     });
   } catch (error) {
     console.error('Create account detail error:', error);
@@ -157,7 +139,10 @@ const updateAccountDetail = async (req, res) => {
     }
 
     const accountDetail = await AccountsDetails.findOne({
-      where: { id: req.params.id, userId: req.user.userId }
+      where: {
+        sno: req.params.id,
+        user_id: req.user.id // Filter by authenticated user
+      }
     });
 
     if (!accountDetail) {
@@ -165,40 +150,32 @@ const updateAccountDetail = async (req, res) => {
     }
 
     const { 
-      accountName, 
-      accountNumber, 
-      bankName, 
-      accountType, 
-      balance, 
-      currency, 
-      description,
-      isActive
+      entry_type, 
+      income_sno, 
+      expenses_sno, 
+      salary_sno, 
+      entry_by, 
+      ip_address, 
+      browser_name,
+      browser_ver,
+      operating_sys
     } = req.body;
 
     await accountDetail.update({
-      accountName: accountName || accountDetail.accountName,
-      accountNumber: accountNumber || accountDetail.accountNumber,
-      bankName: bankName || accountDetail.bankName,
-      accountType: accountType || accountDetail.accountType,
-      balance: balance !== undefined ? balance : accountDetail.balance,
-      currency: currency || accountDetail.currency,
-      description: description || accountDetail.description,
-      isActive: isActive !== undefined ? isActive : accountDetail.isActive
-    });
-
-    const updatedAccountDetail = await AccountsDetails.findByPk(accountDetail.id, {
-      include: [
-        {
-          model: User,
-          as: 'user',
-          attributes: ['id', 'name', 'email']
-        }
-      ]
+      entry_type: entry_type || accountDetail.entry_type,
+      income_sno: income_sno || accountDetail.income_sno,
+      expenses_sno: expenses_sno || accountDetail.expenses_sno,
+      salary_sno: salary_sno || accountDetail.salary_sno,
+      entry_by: entry_by || accountDetail.entry_by,
+      ip_address: ip_address || accountDetail.ip_address,
+      browser_name: browser_name || accountDetail.browser_name,
+      browser_ver: browser_ver || accountDetail.browser_ver,
+      operating_sys: operating_sys || accountDetail.operating_sys
     });
 
     res.json({
       message: 'Account detail updated successfully',
-      accountDetail: updatedAccountDetail
+      accountDetail
     });
   } catch (error) {
     console.error('Update account detail error:', error);
@@ -212,7 +189,10 @@ const updateAccountDetail = async (req, res) => {
 const deleteAccountDetail = async (req, res) => {
   try {
     const accountDetail = await AccountsDetails.findOne({
-      where: { id: req.params.id, userId: req.user.userId }
+      where: {
+        sno: req.params.id,
+        user_id: req.user.id // Filter by authenticated user
+      }
     });
 
     if (!accountDetail) {
@@ -233,105 +213,41 @@ const deleteAccountDetail = async (req, res) => {
 // @access  Private
 const getAccountsDetailsStats = async (req, res) => {
   try {
-    const whereClause = { userId: req.user.userId };
+    const whereClause = {
+      user_id: req.user.id // Filter by authenticated user
+    };
 
-    const totalAccounts = await AccountsDetails.count({ where: whereClause });
-    const activeAccounts = await AccountsDetails.count({ where: { ...whereClause, isActive: true } });
-    const totalBalance = await AccountsDetails.sum('balance', { where: whereClause });
-
-    // Get accounts by type
-    const accountsByType = await AccountsDetails.findAll({
+    const totalEntries = await AccountsDetails.count({ where: whereClause });
+    
+    // Get entries by type
+    const entriesByType = await AccountsDetails.findAll({
       where: whereClause,
       attributes: [
-        'accountType',
-        [AccountsDetails.sequelize.fn('COUNT', AccountsDetails.sequelize.col('id')), 'count'],
-        [AccountsDetails.sequelize.fn('SUM', AccountsDetails.sequelize.col('balance')), 'totalBalance']
+        'entry_type',
+        [AccountsDetails.sequelize.fn('COUNT', AccountsDetails.sequelize.col('sno')), 'count']
       ],
-      group: ['accountType']
+      group: ['entry_type']
     });
 
-    // Get accounts by bank
-    const accountsByBank = await AccountsDetails.findAll({
+    // Get entries by month for the last 12 months
+    const monthlyEntries = await AccountsDetails.findAll({
       where: whereClause,
       attributes: [
-        'bankName',
-        [AccountsDetails.sequelize.fn('COUNT', AccountsDetails.sequelize.col('id')), 'count'],
-        [AccountsDetails.sequelize.fn('SUM', AccountsDetails.sequelize.col('balance')), 'totalBalance']
+        [AccountsDetails.sequelize.fn('TO_CHAR', AccountsDetails.sequelize.col('created_at'), 'YYYY-MM'), 'month'],
+        [AccountsDetails.sequelize.fn('COUNT', AccountsDetails.sequelize.col('sno')), 'count']
       ],
-      group: ['bankName']
-    });
-
-    // Get accounts by currency
-    const accountsByCurrency = await AccountsDetails.findAll({
-      where: whereClause,
-      attributes: [
-        'currency',
-        [AccountsDetails.sequelize.fn('COUNT', AccountsDetails.sequelize.col('id')), 'count'],
-        [AccountsDetails.sequelize.fn('SUM', AccountsDetails.sequelize.col('balance')), 'totalBalance']
-      ],
-      group: ['currency']
-    });
-
-    // Get recent accounts (last 5)
-    const recentAccounts = await AccountsDetails.findAll({
-      where: whereClause,
-      include: [
-        {
-          model: User,
-          as: 'user',
-          attributes: ['id', 'name', 'email']
-        }
-      ],
-      order: [['createdAt', 'DESC']],
-      limit: 5
+      group: [AccountsDetails.sequelize.fn('TO_CHAR', AccountsDetails.sequelize.col('created_at'), 'YYYY-MM')],
+      order: [[AccountsDetails.sequelize.fn('TO_CHAR', AccountsDetails.sequelize.col('created_at'), 'YYYY-MM'), 'DESC']],
+      limit: 12
     });
 
     res.json({
-      totalAccounts,
-      activeAccounts,
-      totalBalance: totalBalance || 0,
-      accountsByType,
-      accountsByBank,
-      accountsByCurrency,
-      recentAccounts
+      totalEntries,
+      entriesByType,
+      monthlyEntries
     });
   } catch (error) {
     console.error('Get accounts details stats error:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-};
-
-// @desc    Toggle account status
-// @route   PATCH /api/accounts-details/:id/toggle-status
-// @access  Private
-const toggleAccountStatus = async (req, res) => {
-  try {
-    const accountDetail = await AccountsDetails.findOne({
-      where: { id: req.params.id, userId: req.user.userId }
-    });
-
-    if (!accountDetail) {
-      return res.status(404).json({ message: 'Account detail not found' });
-    }
-
-    await accountDetail.update({ isActive: !accountDetail.isActive });
-
-    const updatedAccountDetail = await AccountsDetails.findByPk(accountDetail.id, {
-      include: [
-        {
-          model: User,
-          as: 'user',
-          attributes: ['id', 'name', 'email']
-        }
-      ]
-    });
-
-    res.json({
-      message: `Account ${accountDetail.isActive ? 'activated' : 'deactivated'} successfully`,
-      accountDetail: updatedAccountDetail
-    });
-  } catch (error) {
-    console.error('Toggle account status error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -342,6 +258,5 @@ module.exports = {
   createAccountDetail,
   updateAccountDetail,
   deleteAccountDetail,
-  getAccountsDetailsStats,
-  toggleAccountStatus
+  getAccountsDetailsStats
 }; 

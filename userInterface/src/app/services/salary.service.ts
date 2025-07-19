@@ -3,6 +3,17 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Salary } from '../models/salary.model';
 
+// Define the new API response structure
+interface SalaryResponse {
+  salaries: Salary[];
+  pagination: {
+    currentPage: number;
+    totalPages: number;
+    totalItems: number;
+    itemsPerPage: number;
+  };
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -11,7 +22,7 @@ export class SalaryService {
 
   constructor(private http: HttpClient) { }
 
-  getSalaries(filters?: any): Observable<{ data: Salary[] }> {
+  getSalaries(filters?: any): Observable<SalaryResponse> {
     let params = new HttpParams();
     if (filters) {
       Object.keys(filters).forEach(key => {
@@ -20,7 +31,7 @@ export class SalaryService {
         }
       });
     }
-    return this.http.get<{ data: Salary[] }>(this.apiUrl, { params });
+    return this.http.get<SalaryResponse>(this.apiUrl, { params });
   }
 
   getSalaryById(id: number): Observable<Salary> {

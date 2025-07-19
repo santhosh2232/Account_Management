@@ -3,6 +3,17 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Expense } from '../models/expense.model';
 
+// Define the new API response structure
+interface ExpenseResponse {
+  expenses: Expense[];
+  pagination: {
+    currentPage: number;
+    totalPages: number;
+    totalItems: number;
+    itemsPerPage: number;
+  };
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -11,7 +22,7 @@ export class ExpenseService {
 
   constructor(private http: HttpClient) { }
 
-  getExpenses(filters?: any): Observable<{ data: Expense[] }> {
+  getExpenses(filters?: any): Observable<ExpenseResponse> {
     let params = new HttpParams();
     if (filters) {
       Object.keys(filters).forEach(key => {
@@ -20,7 +31,7 @@ export class ExpenseService {
         }
       });
     }
-    return this.http.get<{ data: Expense[] }>(this.apiUrl, { params });
+    return this.http.get<ExpenseResponse>(this.apiUrl, { params });
   }
 
   getExpenseById(id: number): Observable<Expense> {

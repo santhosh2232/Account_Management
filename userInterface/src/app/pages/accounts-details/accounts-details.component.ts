@@ -5,6 +5,8 @@ import { catchError, finalize } from 'rxjs/operators';
 import { IncomeService } from '../../services/income.service';
 import { ExpenseService } from '../../services/expense.service';
 import { SalaryService } from '../../services/salary.service';
+import { AccountsDetailsService } from '../../services/accounts-details.service';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-accounts-details',
@@ -66,7 +68,9 @@ export class AccountsDetailsComponent implements OnInit, OnDestroy {
     private fb: FormBuilder,
     private incomeService: IncomeService,
     private expenseService: ExpenseService,
-    private salaryService: SalaryService
+    private salaryService: SalaryService,
+    private accountsDetailsService: AccountsDetailsService,
+    private authService: AuthService
   ) {
     this.filterForm = this.fb.group({
       startDate: [''],
@@ -102,25 +106,32 @@ export class AccountsDetailsComponent implements OnInit, OnDestroy {
     this.loading = true;
     this.error = '';
 
+    // Get filters for API calls
+    const filters = this.filterForm.value;
+    const apiFilters: any = {};
+    
+    if (filters.startDate) apiFilters.startDate = filters.startDate;
+    if (filters.endDate) apiFilters.endDate = filters.endDate;
+
     // Use forkJoin for better error handling and performance
-    const incomeCall = this.incomeService.getIncomes().pipe(
+    const incomeCall = this.incomeService.getIncomes(apiFilters).pipe(
       catchError(error => {
         console.error('Error loading income data:', error);
-        return of({ data: [] });
+        return of({ incomes: [] } as any);
       })
     );
 
-    const expenseCall = this.expenseService.getExpenses().pipe(
+    const expenseCall = this.expenseService.getExpenses(apiFilters).pipe(
       catchError(error => {
         console.error('Error loading expense data:', error);
-        return of({ data: [] });
+        return of({ expenses: [] } as any);
       })
     );
 
-    const salaryCall = this.salaryService.getSalaries().pipe(
+    const salaryCall = this.salaryService.getSalaries(apiFilters).pipe(
       catchError(error => {
         console.error('Error loading salary data:', error);
-        return of({ data: [] });
+        return of({ salaries: [] } as any);
       })
     );
 
@@ -156,8 +167,13 @@ export class AccountsDetailsComponent implements OnInit, OnDestroy {
   }
 
   private extractDataArray(response: any): any[] {
-    
-    if (response && response.data && Array.isArray(response.data)) {
+    if (response && response.incomes && Array.isArray(response.incomes)) {
+      return response.incomes;
+    } else if (response && response.expenses && Array.isArray(response.expenses)) {
+      return response.expenses;
+    } else if (response && response.salaries && Array.isArray(response.salaries)) {
+      return response.salaries;
+    } else if (response && response.data && Array.isArray(response.data)) {
       return response.data;
     } else if (Array.isArray(response)) {
       return response;
@@ -251,12 +267,7 @@ export class AccountsDetailsComponent implements OnInit, OnDestroy {
   }
 
   private calculateIncomeTotal(data: any[]): number {
-    return data
-      .filter(income => income.status === '1') // Only successful payments
-      .reduce((sum: number, income: any) => {
-        const value = parseFloat(income.amount) || 0;
-        return sum + value;
-      }, 0);
+    return this.calculateTotal(data, 'amount');
   }
 
   getCategoryLabel(categoryValue: string, categories: any[]): string {
@@ -273,19 +284,11 @@ export class AccountsDetailsComponent implements OnInit, OnDestroy {
     this.loadAccountDetails();
   }
 
-  // Helper method to format currency
   formatCurrency(amount: number): string {
     return `₹${amount.toLocaleString()}`;
   }
 
-  // Helper method to get description for salary records
   getSalaryDescription(salary: any): string {
-    if (salary.payment_type_remarks) {
-      return salary.payment_type_remarks;
-    }
-    if (salary.payment_to_whom) {
-      return `Paid to: ${salary.payment_to_whom}`;
-    }
-    return 'Salary payment';
+    return `${this.getSalaryTypeLabel(salary.payment_type)} - ${salary.payment_to_whom || 'N/A'}`;
   }
 } 

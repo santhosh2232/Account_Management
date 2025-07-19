@@ -11,6 +11,7 @@ const AccountsDetails = require('./accountsDetails');
 AccountsDetails.belongsTo(Income, { foreignKey: 'income_sno', as: 'income' });
 AccountsDetails.belongsTo(Expense, { foreignKey: 'expenses_sno', as: 'expense' });
 AccountsDetails.belongsTo(Salary, { foreignKey: 'salary_sno', as: 'salary' });
+AccountsDetails.belongsTo(User, { foreignKey: 'entry_by', targetKey: 'username', as: 'entryByUser' });
 
 Income.hasMany(AccountsDetails, { foreignKey: 'income_sno', as: 'accountsDetails' });
 Expense.hasMany(AccountsDetails, { foreignKey: 'expenses_sno', as: 'accountsDetails' });

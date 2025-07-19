@@ -1,15 +1,16 @@
+const path = require('path');
 const { Sequelize } = require('sequelize');
-const config = require('../config');
+require('dotenv').config({ path: path.resolve(__dirname, '.env') });
 
 const sequelize = new Sequelize(
-  config.DB_NAME || 'accounts_management',
-  config.DB_USER || 'root',
-  config.DB_PASSWORD || '',
+  process.env.DB_NAME || 'accounts_management',
+  process.env.DB_USER || 'postgres',
+  process.env.DB_PASSWORD || '',
   {
-    host: config.DB_HOST || 'localhost',
-    port: config.DB_PORT || 3306,
-    dialect: 'mysql',
-    logging: config.NODE_ENV === 'development' ? console.log : false,
+    host: process.env.DB_HOST || 'localhost',
+    port: process.env.DB_PORT || 5432,
+    dialect: 'postgres',
+    logging: process.env.NODE_ENV === 'development' ? console.log : false,
     pool: {
       max: 5,
       min: 0,

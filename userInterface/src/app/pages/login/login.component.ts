@@ -15,6 +15,13 @@ export class LoginComponent implements OnInit {
   error = '';
   returnUrl: string = '/dashboard';
 
+  // Forgot password state
+  showForgotPassword = false;
+  forgotPasswordForm: FormGroup;
+  forgotLoading = false;
+  forgotError: string | null = null;
+  forgotSuccess: string | null = null;
+
   constructor(
     private formBuilder: FormBuilder,
     private authService: AuthService,
@@ -22,19 +29,18 @@ export class LoginComponent implements OnInit {
     private route: ActivatedRoute
   ) {
     this.loginForm = this.formBuilder.group({
-      email: ['', [Validators.required, Validators.email]],
+      email: ['', [Validators.required]],
       password: ['', [Validators.required, Validators.minLength(6)]]
+    });
+    this.forgotPasswordForm = this.formBuilder.group({
+      identifier: ['', [Validators.required]],
+      newPassword: ['', [Validators.required, Validators.minLength(6)]]
     });
   }
 
   ngOnInit(): void {
     // get return url from route parameters or default to '/dashboard'
     this.returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/dashboard';
-    
-    // redirect to dashboard if already logged in
-    if (this.authService.isAuthenticated()) {
-      this.router.navigate([this.returnUrl]);
-    }
   }
 
   onSubmit(): void {
@@ -49,13 +55,35 @@ export class LoginComponent implements OnInit {
 
     this.authService.login(loginRequest).subscribe({
       next: (response) => {
-        this.router.navigate([this.returnUrl]);
+        setTimeout(() => {
+          this.router.navigate([this.returnUrl]);
+        }, 100); // 100ms delay to ensure sessionStorage is set
       },
       error: (error) => {
         this.error = error.error?.message || 'Login failed. Please try again.';
         this.loading = false;
       }
     });
+  }
+
+  onForgotPassword(): void {
+    if (this.forgotPasswordForm.invalid) return;
+    this.forgotLoading = true;
+    this.forgotError = null;
+    this.forgotSuccess = null;
+    const { identifier, newPassword } = this.forgotPasswordForm.value;
+    this.authService.forgotPassword(identifier, newPassword)
+      .subscribe({
+        next: (res) => {
+          this.forgotSuccess = res.message || 'Password reset successful!';
+          this.forgotLoading = false;
+          this.forgotPasswordForm.reset();
+        },
+        error: (err) => {
+          this.forgotError = err.error?.message || 'Password reset failed.';
+          this.forgotLoading = false;
+        }
+      });
   }
 
   get f() {

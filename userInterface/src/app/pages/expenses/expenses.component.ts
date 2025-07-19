@@ -115,9 +115,11 @@ export class ExpensesComponent implements OnInit {
     if (filters.paymentMethod) queryParams.paymentMethod = filters.paymentMethod;
 
     this.expenseService.getExpenses(queryParams).subscribe({
-      next: (response) => {
-        // Extract data array from response
-        if (response && response.data && Array.isArray(response.data)) {
+      next: (response: any) => {
+        // Extract data array from response - handle both new and old structure
+        if (response && response.expenses && Array.isArray(response.expenses)) {
+          this.expenses = response.expenses;
+        } else if (response && response.data && Array.isArray(response.data)) {
           this.expenses = response.data;
         } else {
           this.expenses = [];

@@ -17,4 +17,11 @@ export interface AuthResponse {
   user: User;
   token: string;
   message: string;
+}
+
+export interface RegisterRequest {
+  name: string;
+  email: string;
+  password: string;
+  role?: 'admin' | 'user';
 } 

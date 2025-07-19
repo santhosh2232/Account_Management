@@ -22,10 +22,24 @@
   color: #ef4444;
 }
 
-/* Button hover effects */
-button:not(:disabled):hover {
+/* Button styles */
+button[type="submit"] {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  font-weight: 500;
+  transition: all 0.2s ease-in-out;
+}
+
+button[type="submit"]:not(:disabled):hover {
   transform: translateY(-1px);
-  transition: transform 0.15s ease-in-out;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+button[type="submit"]:not(:disabled):active {
+  transform: translateY(0);
 }
 
 /* Loading spinner animation */
@@ -37,4 +51,22 @@ button:not(:disabled):hover {
 
 .animate-spin {
   animation: spin 1s linear infinite;
+}
+
+/* Form container improvements */
+.form-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Responsive improvements */
+@media (max-width: 640px) {
+  .input-field {
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+  
+  button[type="submit"] {
+    min-height: 48px; /* Better touch target on mobile */
+  }
 } 

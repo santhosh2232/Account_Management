@@ -20,7 +20,9 @@ router.get('/', auth, async (req, res) => {
     } = req.query;
 
     const offset = (page - 1) * limit;
-    const whereClause = {};
+    const whereClause = {
+      user_id: req.user.id // Filter by authenticated user
+    };
 
     // Apply filters
     if (entryType) {
@@ -45,16 +47,22 @@ router.get('/', auth, async (req, res) => {
         {
           model: Income,
           as: 'income',
+          where: { user_id: req.user.id }, // Filter income by user
+          required: false,
           attributes: ['sno', 'income_cat', 'amount', 'sender_name', 'received_by', 'received_on']
         },
         {
           model: Expense,
           as: 'expense',
+          where: { user_id: req.user.id }, // Filter expense by user
+          required: false,
           attributes: ['sno', 'expense_cat', 'amount', 'spent_by', 'spent_on', 'spent_through']
         },
         {
           model: Salary,
           as: 'salary',
+          where: { user_id: req.user.id }, // Filter salary by user
+          required: false,
           attributes: ['sno', 'payment_type', 'amount', 'payment_to_whom', 'spent_date', 'payment_through']
         }
       ],
@@ -85,19 +93,29 @@ router.get('/', auth, async (req, res) => {
 // Get accounts details by ID
 router.get('/:id', auth, async (req, res) => {
   try {
-    const accountDetail = await AccountsDetails.findByPk(req.params.id, {
+    const accountDetail = await AccountsDetails.findOne({
+      where: {
+        sno: req.params.id,
+        user_id: req.user.id // Filter by authenticated user
+      },
       include: [
         {
           model: Income,
-          as: 'income'
+          as: 'income',
+          where: { user_id: req.user.id }, // Filter income by user
+          required: false
         },
         {
           model: Expense,
-          as: 'expense'
+          as: 'expense',
+          where: { user_id: req.user.id }, // Filter expense by user
+          required: false
         },
         {
           model: Salary,
-          as: 'salary'
+          as: 'salary',
+          where: { user_id: req.user.id }, // Filter salary by user
+          required: false
         }
       ]
     });
@@ -120,7 +138,9 @@ router.get('/:id', auth, async (req, res) => {
 router.get('/summary/transactions', auth, async (req, res) => {
   try {
     const { startDate, endDate } = req.query;
-    const whereClause = {};
+    const whereClause = {
+      user_id: req.user.id // Filter by authenticated user
+    };
 
     if (startDate && endDate) {
       whereClause.created_at = {
@@ -161,21 +181,30 @@ router.get('/activity/user/:username', auth, async (req, res) => {
     const offset = (page - 1) * limit;
 
     const { count, rows } = await AccountsDetails.findAndCountAll({
-      where: { entry_by: username },
+      where: { 
+        entry_by: username,
+        user_id: req.user.id // Filter by authenticated user
+      },
       include: [
         {
           model: Income,
           as: 'income',
+          where: { user_id: req.user.id }, // Filter income by user
+          required: false,
           attributes: ['sno', 'income_cat', 'amount', 'sender_name', 'received_by', 'received_on']
         },
         {
           model: Expense,
           as: 'expense',
+          where: { user_id: req.user.id }, // Filter expense by user
+          required: false,
           attributes: ['sno', 'expense_cat', 'amount', 'spent_by', 'spent_on', 'spent_through']
         },
         {
           model: Salary,
           as: 'salary',
+          where: { user_id: req.user.id }, // Filter salary by user
+          required: false,
           attributes: ['sno', 'payment_type', 'amount', 'payment_to_whom', 'spent_date', 'payment_through']
         }
       ],

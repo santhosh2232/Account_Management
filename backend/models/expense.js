@@ -8,6 +8,11 @@ const Expense = sequelize.define('Expense', {
     autoIncrement: true,
     comment: 'Auto-increment primary key'
   },
+  user_id: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    comment: 'Foreign key to users table'
+  },
   expense_cat: {
     type: DataTypes.ENUM('1', '2', '3', '4', '5'),
     allowNull: false,

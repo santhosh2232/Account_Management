@@ -1,11 +1,11 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
-const config = require('./config');
 
 const app = express();
-const PORT = config.PORT || 3000;
+const PORT = process.env.PORT || 3000;
 
 // Import routes
 const authRoutes = require('./routes/auth');
@@ -19,14 +19,14 @@ app.use(helmet());
 
 // CORS configuration
 app.use(cors({
-  origin: config.FRONTEND_URL || 'http://localhost:4200',
+  origin: process.env.FRONTEND_URL || 'http://localhost:4200',
   credentials: true
 }));
 
 // Rate limiting
 const limiter = rateLimit({
-  windowMs: config.RATE_LIMIT_WINDOW_MS || 15 * 60 * 1000, // 15 minutes
-  max: config.RATE_LIMIT_MAX_REQUESTS || 100 // limit each IP to 100 requests per windowMs
+  windowMs: process.env.RATE_LIMIT_WINDOW_MS || 15 * 60 * 1000, // 15 minutes
+  max: process.env.RATE_LIMIT_MAX_REQUESTS || 100 // limit each IP to 100 requests per windowMs
 });
 app.use('/api/', limiter);
 
@@ -41,8 +41,9 @@ const { sequelize } = require('./models');
 sequelize.authenticate()
   .then(() => {
     console.log('Database connection has been established successfully.');
-    // Sync all models with database
-    return sequelize.sync({ alter: true });
+    // Only sync models without alter/force to avoid modifying tables on every restart
+    // This is recommended for production or when the schema is stable
+    return sequelize.sync();
   })
   .then(() => {
     console.log('Database models synchronized successfully.');
@@ -72,7 +73,7 @@ app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ 
     message: 'Something went wrong!',
-    error: config.NODE_ENV === 'development' ? err.message : {}
+    error: process.env.NODE_ENV === 'development' ? err.message : {}
   });
 });
 
@@ -84,5 +85,5 @@ app.use('*', (req, res) => {
 // Start server
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
-  console.log(`Environment: ${config.NODE_ENV || 'development'}`);
+  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
 }); 

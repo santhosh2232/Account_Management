@@ -163,21 +163,21 @@ export class DashboardComponent implements OnInit, OnDestroy {
     const incomeCall = this.incomeService.getIncomes().pipe(
       catchError(error => {
         console.error('Error loading income data:', error);
-        return of({ data: [] });
+        return of({ incomes: [] } as any);
       })
     );
 
     const expenseCall = this.expenseService.getExpenses().pipe(
       catchError(error => {
         console.error('Error loading expense data:', error);
-        return of({ data: [] });
+        return of({ expenses: [] } as any);
       })
     );
 
     const salaryCall = this.salaryService.getSalaries().pipe(
       catchError(error => {
         console.error('Error loading salary data:', error);
-        return of({ data: [] });
+        return of({ salaries: [] } as any);
       })
     );
 
@@ -192,10 +192,30 @@ export class DashboardComponent implements OnInit, OnDestroy {
     ).subscribe({
       next: (data: any) => {
         try {
-          // Extract data arrays from the response structure
-          const incomeData = data.incomes?.data || data.incomes || [];
-          const expenseData = data.expenses?.data || data.expenses || [];
-          const salaryData = data.salaries?.data || data.salaries || [];
+          // Extract data arrays from the new response structure
+          // Handle both new structure (incomes/expenses/salaries) and old structure (data)
+          const incomeData = data.incomes?.incomes || data.incomes?.data || data.incomes || [];
+          const expenseData = data.expenses?.expenses || data.expenses?.data || data.expenses || [];
+          const salaryData = data.salaries?.salaries || data.salaries?.data || data.salaries || [];
+
+          // Ensure data is an array before processing
+          if (!Array.isArray(incomeData)) {
+            console.error('Income data is not an array:', incomeData);
+            this.error = 'Invalid income data format. Please try again.';
+            return;
+          }
+
+          if (!Array.isArray(expenseData)) {
+            console.error('Expense data is not an array:', expenseData);
+            this.error = 'Invalid expense data format. Please try again.';
+            return;
+          }
+
+          if (!Array.isArray(salaryData)) {
+            console.error('Salary data is not an array:', salaryData);
+            this.error = 'Invalid salary data format. Please try again.';
+            return;
+          }
 
           // Process income data
           this.stats.totalIncome = this.calculateIncomeTotal(incomeData);
