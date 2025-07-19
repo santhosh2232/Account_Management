@@ -67,6 +67,7 @@ The application uses PostgreSQL with the following tables:
 - **Status Management**: Transaction status tracking (Success, Failed, Wrong Entry, Inactive)
 - **Audit Trail**: Complete transaction history with browser and system information
 - **Referential Integrity**: Proper foreign key constraints and cascading
+- **SSL Encryption**: Secure database connections with SSL/TLS encryption
 
 ## 🛠 Installation & Setup
 
@@ -216,6 +217,9 @@ DB_NAME=account_management
 DB_USER=your_username
 DB_PASSWORD=your_password
 
+# SSL Configuration (set to 'false' to disable SSL)
+DB_SSL=true
+
 # JWT Configuration
 JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
 
@@ -301,6 +305,9 @@ FRONTEND_URL=http://localhost:4200
 - **CORS Protection**: Configured for secure cross-origin requests
 - **SQL Injection Prevention**: Parameterized queries with Sequelize
 - **XSS Protection**: Input sanitization and output encoding
+- **SSL/TLS Encryption**: Database connections secured with SSL
+- **Rate Limiting**: API rate limiting to prevent abuse
+- **Helmet Security**: Security headers for enhanced protection
 
 ## 📊 Dashboard Features
 
