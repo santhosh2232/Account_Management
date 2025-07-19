@@ -1,7 +1,7 @@
 const { validationResult } = require('express-validator');
 const { Op } = require('sequelize');
-const AccountsDetails = require('../models/AccountsDetails');
-const User = require('../models/User');
+const AccountsDetails = require('../models/accountsDetails');
+const User = require('../models/user');
 
 // @desc    Get all accounts details with filtering and pagination
 // @route   GET /api/accounts-details

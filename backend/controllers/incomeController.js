@@ -1,6 +1,6 @@
 const { validationResult } = require('express-validator');
 const { Op } = require('sequelize');
-const Income = require('../models/Income');
+const Income = require('../models/income');
 const { User, AccountsDetails } = require('../models');
 
 // @desc    Get all incomes with filtering and pagination

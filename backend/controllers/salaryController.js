@@ -1,7 +1,7 @@
 const { validationResult } = require('express-validator');
 const { Op } = require('sequelize');
-const Salary = require('../models/Salary');
-const User = require('../models/User');
+const Salary = require('../models/salary');
+const User = require('../models/user');
 
 // @desc    Get all salaries with filtering and pagination
 // @route   GET /api/salary
