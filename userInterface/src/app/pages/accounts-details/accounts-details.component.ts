@@ -53,7 +53,14 @@ export class AccountsDetailsComponent implements OnInit, OnDestroy {
     { value: '3', label: 'Others' }
   ];
 
-  // Summary statistics
+  // Status options for income and expenses
+  statusOptions = [
+    { value: '1', label: 'Success', color: 'green' },
+    { value: '2', label: 'Failed', color: 'red' },
+    { value: '3', label: 'Wrong Entry', color: 'yellow' },
+    { value: '4', label: 'Inactive', color: 'gray' }
+  ];
+
   summary = {
     totalIncome: 0,
     totalExpenses: 0,
@@ -61,7 +68,20 @@ export class AccountsDetailsComponent implements OnInit, OnDestroy {
     netBalance: 0,
     incomeCount: 0,
     expenseCount: 0,
-    salaryCount: 0
+    salaryCount: 0,
+    // Status breakdown
+    incomeStatusBreakdown: {
+      success: 0,
+      failed: 0,
+      wrongEntry: 0,
+      inactive: 0
+    },
+    expenseStatusBreakdown: {
+      success: 0,
+      failed: 0,
+      wrongEntry: 0,
+      inactive: 0
+    }
   };
 
   constructor(
@@ -250,6 +270,7 @@ export class AccountsDetailsComponent implements OnInit, OnDestroy {
   }
 
   calculateSummary(): void {
+    // Calculate total income only from successful transactions (status = '1')
     this.summary.totalIncome = this.calculateIncomeTotal(this.filteredIncomes);
     this.summary.totalExpenses = this.calculateTotal(this.filteredExpenses, 'amount');
     this.summary.totalSalary = this.calculateTotal(this.filteredSalaries, 'amount');
@@ -257,6 +278,22 @@ export class AccountsDetailsComponent implements OnInit, OnDestroy {
     this.summary.incomeCount = this.filteredIncomes.length;
     this.summary.expenseCount = this.filteredExpenses.length;
     this.summary.salaryCount = this.filteredSalaries.length;
+
+    // Calculate status breakdown for income
+    this.summary.incomeStatusBreakdown = {
+      success: this.filteredIncomes.filter(income => income.status === '1').length,
+      failed: this.filteredIncomes.filter(income => income.status === '2').length,
+      wrongEntry: this.filteredIncomes.filter(income => income.status === '3').length,
+      inactive: this.filteredIncomes.filter(income => income.status === '4').length
+    };
+
+    // Calculate status breakdown for expenses
+    this.summary.expenseStatusBreakdown = {
+      success: this.filteredExpenses.filter(expense => expense.status === '1').length,
+      failed: this.filteredExpenses.filter(expense => expense.status === '2').length,
+      wrongEntry: this.filteredExpenses.filter(expense => expense.status === '3').length,
+      inactive: this.filteredExpenses.filter(expense => expense.status === '4').length
+    };
   }
 
   private calculateTotal(data: any[], field: string): number {
@@ -267,7 +304,13 @@ export class AccountsDetailsComponent implements OnInit, OnDestroy {
   }
 
   private calculateIncomeTotal(data: any[]): number {
-    return this.calculateTotal(data, 'amount');
+    // Only include successful income transactions (status = '1')
+    return data
+      .filter(income => income.status === '1') // Only successful transactions
+      .reduce((sum: number, income: any) => {
+        const value = parseFloat(income.amount) || 0;
+        return sum + value;
+      }, 0);
   }
 
   getCategoryLabel(categoryValue: string, categories: any[]): string {
@@ -278,6 +321,16 @@ export class AccountsDetailsComponent implements OnInit, OnDestroy {
   getSalaryTypeLabel(typeValue: string): string {
     const type = this.salaryTypes.find(t => t.value === typeValue);
     return type ? type.label : typeValue;
+  }
+
+  getStatusLabel(value: string): string {
+    const status = this.statusOptions.find(s => s.value === value);
+    return status ? status.label : value;
+  }
+
+  getStatusColor(value: string): string {
+    const status = this.statusOptions.find(s => s.value === value);
+    return status ? status.color : 'gray';
   }
 
   refreshData(): void {
