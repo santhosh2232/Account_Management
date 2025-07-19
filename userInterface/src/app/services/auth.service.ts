@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, timer } from 'rxjs';
 import { map, takeUntil } from 'rxjs/operators';
 import { User, LoginRequest, AuthResponse } from '../models/user.model';
+import { environment } from '../../environments/environment';
 
 function isTokenExpired(token: string | null): boolean {
   if (!token) return true;
@@ -22,7 +23,7 @@ function isTokenExpired(token: string | null): boolean {
 export class AuthService {
   private currentUserSubject: BehaviorSubject<User | null>;
   public currentUser: Observable<User | null>;
-  private apiUrl = 'http://localhost:3000/api';
+  private apiUrl = environment.apiBaseUrl;
   private sessionTimeout: any;
   private readonly SESSION_TIMEOUT_MINUTES = 2 * 60; // 2 hours in minutes
 

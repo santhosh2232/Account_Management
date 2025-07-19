@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Salary } from '../models/salary.model';
+import { environment } from '../../environments/environment';
 
 // Define the new API response structure
 interface SalaryResponse {
@@ -18,7 +19,7 @@ interface SalaryResponse {
   providedIn: 'root'
 })
 export class SalaryService {
-  private apiUrl = 'http://localhost:3000/api/salary';
+  private apiUrl = environment.apiBaseUrl + '/salary';
 
   constructor(private http: HttpClient) { }
 

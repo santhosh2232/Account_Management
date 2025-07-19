@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Expense } from '../models/expense.model';
+import { environment } from '../../environments/environment';
 
 // Define the new API response structure
 interface ExpenseResponse {
@@ -18,7 +19,7 @@ interface ExpenseResponse {
   providedIn: 'root'
 })
 export class ExpenseService {
-  private apiUrl = 'http://localhost:3000/api/expenses';
+  private apiUrl = environment.apiBaseUrl + '/expenses';
 
   constructor(private http: HttpClient) { }
 
