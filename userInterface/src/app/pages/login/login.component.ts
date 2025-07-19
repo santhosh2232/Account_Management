@@ -74,12 +74,12 @@ export class LoginComponent implements OnInit {
     const { identifier, newPassword } = this.forgotPasswordForm.value;
     this.authService.forgotPassword(identifier, newPassword)
       .subscribe({
-        next: (res) => {
+        next: (res: any) => {
           this.forgotSuccess = res.message || 'Password reset successful!';
           this.forgotLoading = false;
           this.forgotPasswordForm.reset();
         },
-        error: (err) => {
+        error: (err: any) => {
           this.forgotError = err.error?.message || 'Password reset failed.';
           this.forgotLoading = false;
         }

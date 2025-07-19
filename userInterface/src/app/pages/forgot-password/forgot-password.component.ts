@@ -35,12 +35,12 @@ export class ForgotPasswordComponent {
     const { identifier, newPassword } = this.forgotPasswordForm.value;
     // Exclude confirmPassword from the request
     this.authService.forgotPassword(identifier, newPassword).subscribe({
-      next: (res) => {
+      next: (res: any) => {
         this.success = res.message || 'Password reset successful!';
         this.loading = false;
         this.forgotPasswordForm.reset();
       },
-      error: (err) => {
+      error: (err: any) => {
         this.error = err.error?.message || 'Password reset failed.';
         this.loading = false;
       }

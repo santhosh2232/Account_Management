@@ -28,21 +28,17 @@ export class AuthService {
   private readonly SESSION_TIMEOUT_MINUTES = 2 * 60; // 2 hours in minutes
 
   constructor(private http: HttpClient) {
-    const token = sessionStorage.getItem('token');
-    const user = sessionStorage.getItem('currentUser');
+    const token = localStorage.getItem('token');
+    const user = localStorage.getItem('currentUser');
     if (isTokenExpired(token)) {
-      sessionStorage.removeItem('token');
-      sessionStorage.removeItem('currentUser');
+      localStorage.removeItem('token');
+      localStorage.removeItem('currentUser');
     }
     this.currentUserSubject = new BehaviorSubject<User | null>(
       user && !isTokenExpired(token) ? JSON.parse(user) : null
     );
     this.currentUser = this.currentUserSubject.asObservable();
-    
-    // Add event listeners for browser close/tab close
     this.setupSessionCleanup();
-    
-    // Start session timeout if user is logged in
     if (this.currentUserValue) {
       this.startSessionTimeout();
     }
@@ -51,29 +47,24 @@ export class AuthService {
   private setupSessionCleanup(): void {
     // Handle browser/tab close
     window.addEventListener('beforeunload', () => {
-      this.clearSession();
-    });
-
-    // Handle page unload (when navigating away)
-    window.addEventListener('unload', () => {
-      this.clearSession();
+      // Don't clear localStorage on page unload to maintain login state
     });
 
     // Handle page visibility change (when user switches tabs or minimizes)
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'hidden') {
         // Set a flag to track when page becomes hidden
-        sessionStorage.setItem('pageHidden', Date.now().toString());
+        localStorage.setItem('pageHidden', Date.now().toString());
       } else {
         // Check if page was hidden for too long (optional security measure)
-        const hiddenTime = sessionStorage.getItem('pageHidden');
+        const hiddenTime = localStorage.getItem('pageHidden');
         if (hiddenTime) {
           const hiddenDuration = Date.now() - parseInt(hiddenTime);
           const maxHiddenTime = 30 * 60 * 1000; // 30 minutes
           if (hiddenDuration > maxHiddenTime) {
             this.clearSession();
           }
-          sessionStorage.removeItem('pageHidden');
+          localStorage.removeItem('pageHidden');
         }
       }
     });
@@ -109,9 +100,9 @@ export class AuthService {
   }
 
   private clearSession(): void {
-    sessionStorage.removeItem('currentUser');
-    sessionStorage.removeItem('token');
-    sessionStorage.removeItem('pageHidden');
+    localStorage.removeItem('currentUser');
+    localStorage.removeItem('token');
+    localStorage.removeItem('pageHidden');
     this.currentUserSubject.next(null);
     
     if (this.sessionTimeout) {
@@ -124,12 +115,34 @@ export class AuthService {
     return this.currentUserSubject.value;
   }
 
+  isAuthenticated(): boolean {
+    const token = localStorage.getItem('token');
+    if (!token || isTokenExpired(token)) {
+      this.clearSession();
+      return false;
+    }
+    return !!this.currentUserValue;
+  }
+
+  isAdmin(): boolean {
+    return this.currentUserValue?.role === 'admin';
+  }
+
+  getToken(): string | null {
+    const token = localStorage.getItem('token');
+    if (!token || isTokenExpired(token)) {
+      this.clearSession();
+      return null;
+    }
+    return token;
+  }
+
   login(loginRequest: LoginRequest): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(`${this.apiUrl}/auth/login`, loginRequest)
       .pipe(map(response => {
-        // store user details and jwt token in session storage
-        sessionStorage.setItem('currentUser', JSON.stringify(response.user));
-        sessionStorage.setItem('token', response.token);
+        // store user details and jwt token in local storage
+        localStorage.setItem('currentUser', JSON.stringify(response.user));
+        localStorage.setItem('token', response.token);
         this.currentUserSubject.next(response.user);
         
         // Start session timeout
@@ -141,7 +154,7 @@ export class AuthService {
 
   logout() {
     // Call backend logout endpoint
-    const token = sessionStorage.getItem('token');
+    const token = localStorage.getItem('token');
     if (token && !isTokenExpired(token)) {
       this.http.post(`${this.apiUrl}/auth/logout`, {}, {
         headers: { 'Authorization': `Bearer ${token}` }
@@ -155,37 +168,15 @@ export class AuthService {
       });
     }
     
-    // remove user from session storage and set current user to null
+    // remove user from local storage and set current user to null
     this.clearSession();
-  }
-
-  isAuthenticated(): boolean {
-    const token = sessionStorage.getItem('token');
-    if (!token || isTokenExpired(token)) {
-      this.clearSession();
-      return false;
-    }
-    return !!this.currentUserValue;
-  }
-
-  isAdmin(): boolean {
-    return this.currentUserValue?.role === 'admin';
-  }
-
-  getToken(): string | null {
-    const token = sessionStorage.getItem('token');
-    if (!token || isTokenExpired(token)) {
-      this.clearSession();
-      return null;
-    }
-    return token;
   }
 
   register(registerRequest: Partial<User>): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(`${this.apiUrl}/auth/register`, registerRequest)
       .pipe(map(response => {
-        sessionStorage.setItem('currentUser', JSON.stringify(response.user));
-        sessionStorage.setItem('token', response.token);
+        localStorage.setItem('currentUser', JSON.stringify(response.user));
+        localStorage.setItem('token', response.token);
         this.currentUserSubject.next(response.user);
         
         // Start session timeout
