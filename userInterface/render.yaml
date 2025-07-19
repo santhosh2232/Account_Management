@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: account-management-frontend
+    env: static
+    buildCommand: npm install && ng build --configuration production
+    staticPublishPath: ./dist/user-interface
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html 
